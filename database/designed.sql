@@ -80,11 +80,12 @@ alter table ages enable row level security;
 alter table performances enable row level security;
 alter table standards enable row level security;
 
--- Ejemplo de políticas básicas de lectura (opcional, descomentar si es necesario)
--- alter table learning_curriculums create policy "Permitir lectura pública" on learning_curriculums for select using (true);
--- alter table areas create policy "Permitir lectura pública" on areas for select using (true);
--- alter table skills create policy "Permitir lectura pública" on skills for select using (true);
--- alter table abilities create policy "Permitir lectura pública" on abilities for select using (true);
--- alter table cycles create policy "Permitir lectura pública" on cycles for select using (true);
--- alter table ages create policy "Permitir lectura pública" on ages for select using (true);
--- alter table performances create policy "Permitir lectura pública" on performances for select using (true);
+-- Políticas de lectura pública (SELECT) para todos (anónimos y autenticados)
+create policy "Permitir lectura pública en learning_curriculums" on learning_curriculums for select using (true);
+create policy "Permitir lectura pública en areas" on areas for select using (true);
+create policy "Permitir lectura pública en skills" on skills for select using (true);
+create policy "Permitir lectura pública en abilities" on abilities for select using (true);
+create policy "Permitir lectura pública en cycles" on cycles for select using (true);
+create policy "Permitir lectura pública en ages" on ages for select using (true);
+create policy "Permitir lectura pública en performances" on performances for select using (true);
+create policy "Permitir lectura pública en standards" on standards for select using (true);

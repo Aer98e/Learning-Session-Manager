@@ -22,6 +22,106 @@
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Light Theme overrides */
+body.light-theme {
+  --bg-app: #f1f3f9;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card-hover: rgba(255, 255, 255, 0.9);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #6200ea;
+  
+  --color-primary: #6200ea;
+  --color-primary-light: #7c4dff;
+  --color-secondary: #00b8d4;
+  --color-text-main: #1f2937;
+  --color-text-muted: #4b5563;
+  --color-success: #2e7d32;
+  --color-error: #d32f2f;
+  --color-warning: #f57c00;
+  
+  --shadow-main: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+}
+
+/* Light theme specific backgrounds and overrides */
+body.light-theme {
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(98, 0, 234, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(0, 184, 212, 0.06) 0%, transparent 45%);
+}
+
+body.light-theme .app-header h1 {
+  background: linear-gradient(135deg, #1f2937 40%, var(--color-primary) 75%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light-theme .badge {
+  color: var(--color-primary);
+  border-color: rgba(98, 0, 234, 0.4);
+  background: rgba(98, 0, 234, 0.1);
+}
+
+body.light-theme .upload-area {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme input, 
+body.light-theme select, 
+body.light-theme textarea {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-theme input:focus, 
+body.light-theme select:focus, 
+body.light-theme textarea:focus {
+  background: #ffffff;
+  border-color: var(--border-focus);
+}
+
+body.light-theme select option {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+}
+
+body.light-theme .section-block {
+  background: rgba(0, 0, 0, 0.015);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .section-title {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .preview-box strong {
+  color: var(--color-primary);
+}
+
+body.light-theme .performances-list {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-theme .perf-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-theme .marker-tag {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+body.light-theme .marker-tag.primary-marker {
+  color: var(--color-primary);
+  border-color: rgba(98, 0, 234, 0.25);
+  background: rgba(98, 0, 234, 0.06);
+}
+
+body.light-theme .generate-btn:disabled {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 /* Global Reset */
 * {
   box-sizing: border-box;
@@ -56,17 +156,52 @@ body {
 
 /* Header styling */
 .app-header {
-  text-align: center;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .logo-area {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.75rem;
+}
+
+.theme-toggle-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-main);
+  transition: var(--transition-smooth);
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--border-focus);
+}
+
+.theme-toggle-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+body.light-theme .theme-toggle-btn {
+  background: #ffffff;
 }
 
 .logo-icon {
@@ -152,7 +287,7 @@ body {
 .card-header h2 {
   font-size: 1.4rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text-main);
 }
 
 /* Drag & Drop Upload Zone */
@@ -266,7 +401,7 @@ input, select, textarea {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #fff;
+  color: var(--color-text-main);
   font-family: var(--font-sans);
   font-size: 0.95rem;
   transition: var(--transition-smooth);

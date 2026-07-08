@@ -22,6 +22,7 @@ const markerPreviewContainer = document.getElementById('markerPreviewContainer')
 const markersList = document.getElementById('markersList');
 const formSection = document.getElementById('formSection');
 const generateDocBtn = document.getElementById('generateDocBtn');
+const themeToggleBtn = document.getElementById('themeToggle');
 
 const sessionDateInput = document.getElementById('sessionDate');
 const cycleSelect = document.getElementById('cycleSelect');
@@ -128,7 +129,7 @@ function renderMarkersPreview(markers) {
     if (marker.startsWith('AREA') || marker.startsWith('COMPETENCIA') || marker.startsWith('DESEMPEÑOS')) {
       span.classList.add('primary-marker');
     }
-    span.textContent = `{{${marker}}}`;
+    span.textContent = `{${marker}}`;
     markersList.appendChild(span);
   });
 }
@@ -424,12 +425,25 @@ generateDocBtn.addEventListener('click', async () => {
         .map(cb => `• ${cb.value}`)
         .join('\n');
 
-      // Asignar al payload según los marcadores de la plantilla
-      if (detectedMarkers.includes(`AREA${num}`)) payload[`AREA${num}`] = areaName;
-      if (detectedMarkers.includes(`COMPETENCIA${num}`)) payload[`COMPETENCIA${num}`] = skillName;
-      if (detectedMarkers.includes(`ESTANDAR${num}`)) payload[`ESTANDAR${num}`] = sec.selectedStandard;
-      if (detectedMarkers.includes(`CAPACIDADES${num}`)) payload[`CAPACIDADES${num}`] = abilitiesString;
-      if (detectedMarkers.includes(`DESEMPEÑOS${num}`)) payload[`DESEMPEÑOS${num}`] = performancesString;
+      // Asignar al payload según los marcadores de la plantilla (soporta con o sin sufijo 1)
+      if (num === 1) {
+        if (detectedMarkers.includes('AREA')) payload['AREA'] = areaName;
+        if (detectedMarkers.includes('AREA1')) payload['AREA1'] = areaName;
+        if (detectedMarkers.includes('COMPETENCIA')) payload['COMPETENCIA'] = skillName;
+        if (detectedMarkers.includes('COMPETENCIA1')) payload['COMPETENCIA1'] = skillName;
+        if (detectedMarkers.includes('ESTANDAR')) payload['ESTANDAR'] = sec.selectedStandard;
+        if (detectedMarkers.includes('ESTANDAR1')) payload['ESTANDAR1'] = sec.selectedStandard;
+        if (detectedMarkers.includes('CAPACIDADES')) payload['CAPACIDADES'] = abilitiesString;
+        if (detectedMarkers.includes('CAPACIDADES1')) payload['CAPACIDADES1'] = abilitiesString;
+        if (detectedMarkers.includes('DESEMPEÑOS')) payload['DESEMPEÑOS'] = performancesString;
+        if (detectedMarkers.includes('DESEMPEÑOS1')) payload['DESEMPEÑOS1'] = performancesString;
+      } else {
+        if (detectedMarkers.includes(`AREA${num}`)) payload[`AREA${num}`] = areaName;
+        if (detectedMarkers.includes(`COMPETENCIA${num}`)) payload[`COMPETENCIA${num}`] = skillName;
+        if (detectedMarkers.includes(`ESTANDAR${num}`)) payload[`ESTANDAR${num}`] = sec.selectedStandard;
+        if (detectedMarkers.includes(`CAPACIDADES${num}`)) payload[`CAPACIDADES${num}`] = abilitiesString;
+        if (detectedMarkers.includes(`DESEMPEÑOS${num}`)) payload[`DESEMPEÑOS${num}`] = performancesString;
+      }
     });
 
     // Generar archivo
@@ -448,6 +462,7 @@ generateDocBtn.addEventListener('click', async () => {
     URL.revokeObjectURL(downloadUrl);
     
     console.log('¡Documento generado exitosamente!');
+    clearForm();
   } catch (error) {
     console.error('Error al generar el documento:', error);
     alert('Ocurrió un error al procesar y rellenar la plantilla.');
@@ -468,3 +483,52 @@ function formatDate(dateString) {
     day: 'numeric' 
   });
 }
+
+// Limpiar el formulario pero mantener la plantilla en memoria
+function clearForm() {
+  sessionDateInput.value = '';
+  cycleSelect.value = '';
+  ageSelect.value = '';
+  ageSelect.disabled = true;
+
+  [1, 2].forEach(num => {
+    const sec = sections[num];
+    sec.areaSelect.value = '';
+    sec.skillSelect.value = '';
+    sec.skillSelect.disabled = true;
+    sec.selectedAbilities = [];
+    sec.selectedStandard = '';
+    sec.selectedPerformances = [];
+    
+    // Esconder vistas de previsualización
+    document.getElementById(`standardPreview${num}`).classList.add('hidden');
+    document.getElementById(`standardText${num}`).textContent = '';
+    document.getElementById(`abilitiesPreview${num}`).classList.add('hidden');
+    document.getElementById(`abilitiesList${num}`).innerHTML = '';
+    
+    // Resetear lista de desempeños
+    sec.performancesList.innerHTML = '<p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>';
+    sec.performancesList.classList.add('disabled-list');
+  });
+
+  checkFormValidity();
+}
+
+// --- Lógica del Tema (Oscuro / Claro) ---
+const themeToggleIcon = themeToggleBtn.querySelector('.theme-toggle-icon');
+
+// Cargar preferencia guardada o usar oscuro por defecto
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'light') {
+  document.body.classList.add('light-theme');
+  themeToggleIcon.textContent = '🌙';
+} else {
+  themeToggleIcon.textContent = '☀️';
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  document.body.classList.toggle('light-theme');
+  const isLight = document.body.classList.contains('light-theme');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  themeToggleIcon.textContent = isLight ? '🌙' : '☀️';
+});

@@ -14,9 +14,14 @@
 <body>
   <div class="app-container">
     <header class="app-header">
-      <div class="logo-area">
-        <span class="logo-icon">✨</span>
-        <h1>SesiónBuilder <span class="badge">Beta</span></h1>
+      <div class="header-top">
+        <div class="logo-area">
+          <span class="logo-icon">✨</span>
+          <h1>SesiónBuilder <span class="badge">Beta</span></h1>
+        </div>
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Cambiar tema">
+          <span class="theme-toggle-icon">☀️</span>
+        </button>
       </div>
       <p class="subtitle">Generador Inteligente de Sesiones de Aprendizaje</p>
     </header>
@@ -50,7 +55,7 @@
         <form id="sessionForm" onsubmit="return false;">
           <!-- Bloque General -->
           <div class="form-group">
-            <label for="sessionDate">Fecha de la Sesión ({{FECHA}})</label>
+            <label for="sessionDate">Fecha de la Sesión</label>
             <input type="date" id="sessionDate" required>
           </div>
 
@@ -63,7 +68,7 @@
             </div>
             
             <div class="form-group">
-              <label for="ageSelect">Edad / Grado ({{EDAD}})</label>
+              <label for="ageSelect">Edad / Grado</label>
               <select id="ageSelect" required disabled>
                 <option value="">Selecciona la edad...</option>
               </select>
@@ -77,31 +82,31 @@
               <h3 class="section-title">Competencia Principal (Sección 1)</h3>
               
               <div class="form-group">
-                <label for="areaSelect1">Área ({{AREA1}})</label>
+                <label for="areaSelect1">Área</label>
                 <select id="areaSelect1" class="area-select" data-section="1" required>
                   <option value="">Selecciona el área...</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label for="skillSelect1">Competencia ({{COMPETENCIA1}})</label>
+                <label for="skillSelect1">Competencia</label>
                 <select id="skillSelect1" class="skill-select" data-section="1" required disabled>
                   <option value="">Selecciona la competencia...</option>
                 </select>
               </div>
 
               <div class="preview-box hidden" id="standardPreview1">
-                <strong>Estándar de Aprendizaje ({{ESTANDAR1}}):</strong>
+                <strong>Estándar de Aprendizaje:</strong>
                 <p class="preview-text" id="standardText1"></p>
               </div>
 
               <div class="preview-box hidden" id="abilitiesPreview1">
-                <strong>Capacidades Asociadas ({{CAPACIDADES1}}):</strong>
+                <strong>Capacidades Asociadas:</strong>
                 <ul class="preview-list" id="abilitiesList1"></ul>
               </div>
 
               <div class="form-group">
-                <label>Selecciona Desempeños ({{DESEMPEÑOS1}})</label>
+                <label>Selecciona Desempeños</label>
                 <div class="performances-list disabled-list" id="performancesList1">
                   <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
                 </div>
@@ -113,31 +118,31 @@
               <h3 class="section-title">Competencia Secundaria (Sección 2)</h3>
               
               <div class="form-group">
-                <label for="areaSelect2">Área ({{AREA2}})</label>
+                <label for="areaSelect2">Área</label>
                 <select id="areaSelect2" class="area-select" data-section="2">
                   <option value="">Selecciona el área...</option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label for="skillSelect2">Competencia ({{COMPETENCIA2}})</label>
+                <label for="skillSelect2">Competencia</label>
                 <select id="skillSelect2" class="skill-select" data-section="2" disabled>
                   <option value="">Selecciona la competencia...</option>
                 </select>
               </div>
 
               <div class="preview-box hidden" id="standardPreview2">
-                <strong>Estándar de Aprendizaje ({{ESTANDAR2}}):</strong>
+                <strong>Estándar de Aprendizaje:</strong>
                 <p class="preview-text" id="standardText2"></p>
               </div>
 
               <div class="preview-box hidden" id="abilitiesPreview2">
-                <strong>Capacidades Asociadas ({{CAPACIDADES2}}):</strong>
+                <strong>Capacidades Asociadas:</strong>
                 <ul class="preview-list" id="abilitiesList2"></ul>
               </div>
 
               <div class="form-group">
-                <label>Selecciona Desempeños ({{DESEMPEÑOS2}})</label>
+                <label>Selecciona Desempeños</label>
                 <div class="performances-list disabled-list" id="performancesList2">
                   <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
                 </div>
