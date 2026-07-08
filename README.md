@@ -113,3 +113,4 @@ npm run build
 ├── package.json              # Scripts npm y dependencias del proyecto
 └── README.md                 # Documentación técnica (este archivo)
 ```
+
