@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sesiones de Aprendizaje - Administrador</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Link global styles -->
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">✨</span>
+        <h1>SesiónBuilder <span class="badge">Beta</span></h1>
+      </div>
+      <p class="subtitle">Generador Inteligente de Sesiones de Aprendizaje</p>
+    </header>
+
+    <main class="app-main">
+      <!-- Sección 1: Carga de Plantilla -->
+      <section class="card upload-card" id="uploadSection">
+        <div class="card-header">
+          <span class="step-num">01</span>
+          <h2>Cargar Plantilla de Word (.docx)</h2>
+        </div>
+        <div class="upload-area" id="dropZone">
+          <div class="upload-icon">📄</div>
+          <p class="upload-text">Arrastra tu plantilla aquí o <span class="browse-btn">busca un archivo</span></p>
+          <input type="file" id="templateFileInput" accept=".docx" style="display: none;">
+          <p class="file-info" id="fileInfo"></p>
+        </div>
+        <div class="marker-preview hidden" id="markerPreviewContainer">
+          <h3>Marcadores Detectados en la Plantilla:</h3>
+          <div class="markers-list" id="markersList"></div>
+        </div>
+      </section>
+
+      <!-- Sección 2: Configuración (Formulario dinámico) -->
+      <section class="card form-card disabled" id="formSection">
+        <div class="card-header">
+          <span class="step-num">02</span>
+          <h2>Configuración de la Sesión</h2>
+        </div>
+        
+        <form id="sessionForm" onsubmit="return false;">
+          <!-- Bloque General -->
+          <div class="form-group">
+            <label for="sessionDate">Fecha de la Sesión ({{FECHA}})</label>
+            <input type="date" id="sessionDate" required>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cycleSelect">Ciclo</label>
+              <select id="cycleSelect" required>
+                <option value="">Selecciona un ciclo...</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="ageSelect">Edad / Grado ({{EDAD}})</label>
+              <select id="ageSelect" required disabled>
+                <option value="">Selecciona la edad...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SECCIÓN DINÁMICA DE COMPETENCIAS -->
+          <div id="competenciesContainer">
+            <!-- Sección 1 (Siempre visible) -->
+            <div class="section-block" id="section1">
+              <h3 class="section-title">Competencia Principal (Sección 1)</h3>
+              
+              <div class="form-group">
+                <label for="areaSelect1">Área ({{AREA1}})</label>
+                <select id="areaSelect1" class="area-select" data-section="1" required>
+                  <option value="">Selecciona el área...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="skillSelect1">Competencia ({{COMPETENCIA1}})</label>
+                <select id="skillSelect1" class="skill-select" data-section="1" required disabled>
+                  <option value="">Selecciona la competencia...</option>
+                </select>
+              </div>
+
+              <div class="preview-box hidden" id="standardPreview1">
+                <strong>Estándar de Aprendizaje ({{ESTANDAR1}}):</strong>
+                <p class="preview-text" id="standardText1"></p>
+              </div>
+
+              <div class="preview-box hidden" id="abilitiesPreview1">
+                <strong>Capacidades Asociadas ({{CAPACIDADES1}}):</strong>
+                <ul class="preview-list" id="abilitiesList1"></ul>
+              </div>
+
+              <div class="form-group">
+                <label>Selecciona Desempeños ({{DESEMPEÑOS1}})</label>
+                <div class="performances-list disabled-list" id="performancesList1">
+                  <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección 2 (Dinámica, se muestra si existen marcadores 2 en el Word) -->
+            <div class="section-block hidden" id="section2">
+              <h3 class="section-title">Competencia Secundaria (Sección 2)</h3>
+              
+              <div class="form-group">
+                <label for="areaSelect2">Área ({{AREA2}})</label>
+                <select id="areaSelect2" class="area-select" data-section="2">
+                  <option value="">Selecciona el área...</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="skillSelect2">Competencia ({{COMPETENCIA2}})</label>
+                <select id="skillSelect2" class="skill-select" data-section="2" disabled>
+                  <option value="">Selecciona la competencia...</option>
+                </select>
+              </div>
+
+              <div class="preview-box hidden" id="standardPreview2">
+                <strong>Estándar de Aprendizaje ({{ESTANDAR2}}):</strong>
+                <p class="preview-text" id="standardText2"></p>
+              </div>
+
+              <div class="preview-box hidden" id="abilitiesPreview2">
+                <strong>Capacidades Asociadas ({{CAPACIDADES2}}):</strong>
+                <ul class="preview-list" id="abilitiesList2"></ul>
+              </div>
+
+              <div class="form-group">
+                <label>Selecciona Desempeños ({{DESEMPEÑOS2}})</label>
+                <div class="performances-list disabled-list" id="performancesList2">
+                  <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="generate-btn" id="generateDocBtn" disabled>
+            ⚡ Generar y Descargar Documento
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>© 2026 SesiónBuilder Admin. Desarrollado con Supabase y Vite.</p>
+    </footer>
+  </div>
+
+  <!-- Main script entry point -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

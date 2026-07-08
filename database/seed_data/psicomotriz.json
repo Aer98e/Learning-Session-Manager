@@ -1,0 +1,50 @@
+{
+  "learning_curriculum_name": "Currículo Nacional 2016",
+  "area_name": "Psicomotriz",
+  "skills": [
+    {
+      "name": "Se desenvuelve de manera autonoma a través de su motricidad",
+      "description": "Se desenvuelve de manera autónoma a través de su motricidad cuando explora y descubre sus posibilidades de movimiento y las partes de su cuerpo. Realiza acciones motrices básicas en las que coordina movimientos para desplazarse y manipular objetos. Expresa corporalmente a través del gesto, el tono, las posturas y movimientos sus sensaciones y emociones en situaciones cotidianas.",
+      "abilities": [
+        { "name": "Comprende su cuerpo." },
+        { "name": "Se expresa corporalmente." }
+      ],
+      "performances": [
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "9 meses",
+          "descriptions": [
+            "Realiza acciones y movimientos de manera autónoma en los que expresa sus emociones–, que le permiten adquirir posturas, desplazarse en el espacio, explorar su cuerpo e interactuar con el entorno: pasa de la posición boca arriba a boca abajo o viceversa, se coloca de lado o semisentado, y manipula objetos que son de su interés.",
+            "Manifiesta las sensaciones que percibe de su cuerpo, y da muestra de que reconoce algunas partes del mismo, a través de gestos, movimientos y al responder a las solicitudes que surgen en la interacción cotidiana con el adulto que lo cuida."
+          ] 
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "18 meses",
+          "descriptions": [
+            "Realiza acciones y movimientos de manera autónoma en los que expresa sus emociones, que le permiten adquirir posturas, desplazarse en el espacio, explorar su cuerpo e interactuar con el entorno: se sienta, gatea, se para y da algunos pasos apoyándose en un elemento fijo, manipula objetos que son de su interés y al hacerlo demuestra mayor precisión en los movimientos de su mano.",
+            "Manifiesta las sensaciones que percibe de su cuerpo y da muestras de que reconoce las partes de su cuerpo a través de gestos o acciones, y se reconoce a sí mismo cuando observa su imagen en el espejo. "
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "24 meses",
+          "descriptions": [
+            "Realiza acciones y movimientos de manera autónoma en los que expresa sus emociones, que le permiten desplazarse por el espacio, explorar con su cuerpo e interactuar con el entorno: camina con soltura y sin apoyo, se desplaza arrastrando o empujando objetos, corre e intenta subir o bajar pequeñas pendientes, sube escalones con el mismo pie y crea sus propias maneras para bajarlos.",
+            "Realiza acciones de exploración y juego, en las que utiliza ambas manos de manera coordinada. ",
+            "Manifiesta sus sensaciones y necesidades corporales, y reconoce las partes de su cuerpo a través de gestos, acciones y algunas palabras. Da muestras de que reconoce su imagen al mirarse en el espejo o al mirar fotos en las que aparece." 
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "36 meses",
+          "descriptions": [
+            "Realiza acciones y movimientos de manera autónoma en los que expresa sus emociones para explorar con su cuerpo e interactuar con el entorno: corre, sube y baja escalones alternando los pies, salta desde pequeñas alturas, experimenta con su cuerpo el equilibrio y desequilibrio, hace giros, trepa y se desliza por pequeñas pendientes con seguridad. ",
+            "Realiza acciones de exploración y juego, en las que coordina movimientos de sus manos y pies. ",
+            "Manifiesta sus sensaciones y necesidades corporales al mencionarlas en diferentes situaciones de interacción, juego y cuidado cotidiano. " 
+          ]
+        }
+      ]
+    }
+  ]
+}

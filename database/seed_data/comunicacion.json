@@ -1,0 +1,52 @@
+{
+  "learning_curriculum_name": "Currículo Nacional 2016",
+  "area_name": "Comunicación",
+  "skills": [
+    {
+      "name": "Se comunica oralmente en su lengua materna",
+      "description": "Se comunica oralmente, escucha lo que otros le dicen, pregunta y responde. Se expresa espontáneamente a través del lenguaje verbal apoyándose en gestos y lenguaje corporal, con el propósito de interactuar con otras personas de su entorno.",
+      "abilities": [
+        { "name": "Obtiene información del texto oral." },
+        { "name": "Infiere e interpreta información del texto oral." },
+        { "name": "Adecúa, organiza y desarrolla el texto de forma coherente y cohesionada." },
+        { "name": "Utiliza recursos no verbales y paraverbales de forma estratégica." },
+        { "name": "Interactúa estratégicamente con distintos interlocutores." },
+        { "name": "Reflexiona y evalúa la forma, el contenido y contexto del texto oral." }
+      ],
+      "performances": [
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "9 meses",
+          "descriptions": [
+            "Expresa sus necesidades, emociones e intereses al interactuar con personas conocidas de su entorno familiar a través de balbuceos, señas, gestos, sonrisas, miradas, movimientos corporales y, en algunas ocasiones, con el llanto, con la intención de comunicarse o lograr su propósito.",
+            "Responde a las personas conocidas de su entorno familiar que le hablan a través de balbuceos, sonrisas, miradas, señas, gestos y movimientos corporales. "
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "18 meses",
+          "descriptions": [
+            "Expresa sus necesidades, emociones e intereses al interactuar con otras personas conocidas de su entorno familiar a través de señas, gestos, sonrisas, miradas, movimientos corporales y/o algunas palabras con la intención de comunicarse o lograr su propósito. ",
+            "Responde a las personas conocidas de su entorno familiar que le hablan con señas, gestos, sonrisas, miradas, movimientos corporales y algunas palabras."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "24 meses",
+          "descriptions": [
+            "Expresa sus necesidades, emociones e intereses al interactuar con otras personas de su entorno familiar usando algunas palabras y sonidos combinados que se asemejan a palabras, así como movimientos corporales, señas, gestos, sonrisas y miradas con la intención de comunicarse o lograr su propósito.",
+            "Participa en conversaciones con personas de su entorno respondiendo con algunas palabras, así como movimientos corporales, señas, gestos, sonrisas, miradas."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "36 meses",
+          "descriptions": [
+            "Expresa sus necesidades, emociones, intereses y da cuenta de algunas experiencias al interactuar con personas de su entorno familiar y local. Utiliza palabras de uso frecuente, señas, sonrisas, miradas, gestos, así como movimientos corporales, con la intención de comunicarse.",
+            "Participa en conversaciones o cuando escucha cuentos, fábulas, adivinanzas y otros relatos de la tradición oral formulando preguntas o respondiendo con palabras de uso cotidiano a preguntas que le hacen."
+          ]
+        }
+      ]
+    }
+  ]
+}

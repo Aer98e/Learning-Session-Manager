@@ -1,0 +1,86 @@
+{
+  "learning_curriculum_name": "Currículo Nacional 2016",
+  "area_name": "Descubrimiento del Mundo",
+  "skills": [
+    {
+      "name": "Resuelve problemas de cantidad",
+      "description": "Explora por propia iniciativa los objetos y situaciones de su entorno cotidiano utilizando sus sentidos, sus propias estrategias y criterios reconociendo algunas características y estableciendo relaciones o agrupaciones entre ellos y comprende algunas expresiones sencillas relacionadas con la cantidad y el tiempo.",
+      "abilities": [
+        { "name": "Traduce cantidades a expresiones numéricas." },
+        { "name": "Comunica su comprensión sobre los números y las operaciones. " },
+        { "name": "Usa estrategias y procedimientos de estimación y cálculo." }
+      ],
+      "performances": [
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "9 meses",
+          "descriptions": [
+            "Descubre algunas características perceptuales de los objetos de su entorno inmediato durante la exploración con todos sus sentidos y según sus intereses."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "18 meses",
+          "descriptions": [
+            "Establece relaciones entre las características perceptuales y los usos que le asigna a los objetos de su entorno inmediato durante la exploración con todos sus sentidos y según sus intereses. "
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "24 meses",
+          "descriptions": [
+            "Establece relaciones entre las características perceptuales que le asigna a los objetos de su entorno, los junta o separa durante la exploración con todos sus sentidos, según sus intereses y con una intención determinada. ",
+            "Utiliza gestos, movimientos y/u otras expresiones no verbales en respuesta a preguntas o expresiones que surgen en la vida cotidiana relacionadas con la cantidad y el tiempo."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "36 meses",
+          "descriptions": [
+            "Establece relaciones entre las características perceptuales de los objetos en su entorno, los agrupa, empareja, separa y ordena durante la exploración con todos sus sentidos, y según sus intereses y propios criterios. ",
+            "Utiliza gestos, movimientos y otras expresiones no verbales y verbales, en respuesta a preguntas o expresiones que surgen en la vida cotidiana, y están relacionadas con la cantidad y el tiempo."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resuelve problemas de forma, movimiento y localización",
+      "description": "Explora el espacio en situaciones cotidianas utilizando sus sentidos y sus propias estrategias, se desplaza y reconoce su posición o la ubicación de los objetos y comprende algunas expresiones sencillas relacionadas a su ubicación. ",
+      "abilities": [
+        { "name": "Modela objetos con formas geométricas y sus transformaciones." },
+        { "name": "Comunica su comprensión sobre las formas y relaciones geométricas." },
+        { "name": "Usa estrategias y procedimientos para orientarse en el espacio." }
+      ],
+      "performances": [
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "9 meses",
+          "descriptions": [
+            "Descubre relaciones de espacio y medida a partir de la exploración con su cuerpo y todos sus sentidos en su entorno inmediato. Lo hace según sus intereses, y desde sus posibilidades de movimiento y desplazamiento."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "18 meses",
+          "descriptions": [
+            "Establece relaciones de espacio y medida, se organiza y organiza los objetos a partir de la exploración con su cuerpo y todos sus sentidos en su entorno inmediato. Lo hace según sus intereses, y desde sus posibilidades de movimiento y desplazamiento."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "24 meses",
+          "descriptions": [
+            "Establece relaciones de espacio y medida, se organiza y organiza los objetos al sortear obstáculos que están en su camino, transportar los objetos, empujarlos, arrastrarlos, encajarlos, apilarlos por formas similares u ordenarlos a partir de la exploración con su cuerpo y todos sus sentidos. Lo hace según sus intereses, y desde sus posibilidades de movimiento y desplazamiento. "
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "36 meses",
+          "descriptions": [
+            "Establece relaciones de espacio y medida, se organiza y organiza los objetos al sortear obstáculos que están en su camino, transportar los objetos, empujarlos, arrastrarlos u ordenarlos a partir de la exploración con su cuerpo y todos sus sentidos, y en interacción con los otros. Lo hace según sus intereses, y desde sus posibilidades de movimiento y desplazamiento. Utiliza expresiones verbales y no verbales en su cotidianidad, como algunas palabras sencillas: “arriba”, “abajo”, “dentro”, “fuera”. "
+          ]
+        }
+      ]
+    }
+  ]
+}

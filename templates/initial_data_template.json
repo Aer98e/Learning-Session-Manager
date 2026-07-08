@@ -1,0 +1,69 @@
+{
+  "cycles": [
+    {
+      "name": "Ciclo I",
+      "ages": [
+        { "name": "9 meses" },
+        { "name": "18 meses" },
+        { "name": "24 meses" },
+        { "name": "36 meses" }
+      ]
+    }
+  ],
+  "learning_curriculums": [
+    {
+      "name": "Currículo Nacional 2016",
+      "areas": [
+        {
+          "name": "Personal Social",
+          "skills": [
+            {
+              "name": "Construye su identidad",
+              "description": "Construye su identidad al tomar conciencia de los aspectos que lo hacen único. Se identifica con algunas de sus características físicas, sus gustos, disgustos e intereses, su nombre y los miembros de su familia. Participa en sus cuidados personales y en diversas actividades desde su iniciativa y posibilidades. Busca y acepta el consuelo y compañía de su adulto significativo cuando se siente vulnerado e inseguro, así como cuando algunas de sus acciones afectan a otro.",
+              "abilities": [
+                {
+                  "name": "Se valora a sí mismo"
+                },
+                {
+                  "name": "Autorregula sus emociones"
+                }
+              ],
+              "performances": {
+                "cycle_name": "Ciclo I",
+                "age_name": "24 meses",
+                "descriptions":[
+                  "Reconoce sus intereses, necesidades y las sensaciones que percibe de su cuerpo, las diferencia de las de los otros, a través de palabras, acciones, gestos o movimientos. Hace algunas cosas por sí solo, se aleja del adulto por períodos más largos y retorna de manera espontánea. Se siente cómodo en compañía de su familia y la reconoce. ",
+                  "Toma la iniciativa para realizar actividades cotidianas de exploración y juego desde sus intereses y sus posibilidades motrices. Participa con agrado e iniciativa en acciones de su cuidado cuando el adulto cuidador las realiza de forma amable y respetuosa. Muestra comodidad al estar en compañía de su adulto cuidador, otros niños y de otras personas cercanas a él.",
+                  "Expresa sus emociones y responde a las expresiones emocionales de otros a través de palabras, risas, llantos, gestos o movimientos corporales. ",
+                  "Busca consuelo y atención del adulto para sentirse seguro frente a una emoción intensa. Tolera tiempos cortos de espera y maneja la frustración de algunos deseos cuando es anticipado y sostenido por la presencia o la palabra del adulto. "
+                ]
+              }
+            },
+            {
+              "name": "Convive y participa democráticamente en la búsqueda del bien común",
+              "description": "Convive y participa cuando se relaciona con niños y adultos de su espacio cotidiano desde su propia iniciativa. Manifiesta a través de movimientos, gestos o palabras las situaciones que le agradan o le incomodan. Colabora en el cuidado de los materiales y espacios comunes.",
+              "abilities": [
+                {
+                  "name": "Interactúa con todas las personas."
+                },
+                {
+                  "name": "Construye normas, y asume acuerdos y leyes. "
+                },
+                {
+                  "name": "Participa en acciones que promueven el bienestar común."
+                }
+              ],
+              "performances": {
+                "cycle_name": "Ciclo I",
+                "age_name": "24 meses",
+                "descriptions":[
+                  "Interactúa por momentos cortos con otros niños que están en el mismo espacio. Juega junto a ellos, pero no necesariamente con ellos. Reconoce al adulto significativo; en algunos momentos, se aleja sintiéndose seguro y luego regresa para recibir contención."
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "cycles": [
+    {
+      "name": "Ciclo I",
+      "ages": [
+        { "name": "9 meses" },
+        { "name": "18 meses" },
+        { "name": "24 meses" },
+        { "name": "36 meses" }
+      ]
+    },
+    {
+      "name": "Ciclo II",
+      "ages": [
+        { "name": "3 años" },
+        { "name": "4 años" },
+        { "name": "5 años" }
+      ]
+    }
+  ]
+}

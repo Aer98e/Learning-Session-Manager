@@ -1,0 +1,33 @@
+{
+  "learning_curriculum_name": "Currículo Nacional 2016",
+  "area_name": "Nombre del Área (ej. Personal Social)",
+  "skills": [
+    {
+      "name": "Nombre de la Competencia (ej. Construye su identidad)",
+      "description": "Descripción detallada de la competencia...",
+      "abilities": [
+        { "name": "Nombre de la Capacidad 1 (ej. Se valora a sí mismo)" },
+        { "name": "Nombre de la Capacidad 2 (ej. Autorregula sus emociones)" }
+      ],
+      "performances": [
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "24 meses",
+          "descriptions": [
+            "Descripción del desempeño 1...",
+            "Descripción del desempeño 2...",
+            "Descripción del desempeño 3..."
+          ]
+        },
+        {
+          "cycle_name": "Ciclo I",
+          "age_name": "36 meses",
+          "descriptions": [
+            "Descripción del desempeño para otra edad 1...",
+            "Descripción del desempeño para otra edad 2..."
+          ]
+        }
+      ]
+    }
+  ]
+}

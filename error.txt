@@ -1,0 +1,67 @@
+{
+  "error": [
+    {
+      "name": "TemplateError",
+      "message": "Duplicate open tag, expected one open tag",
+      "stack": "Error: Duplicate open tag, expected one open tag\n    at new XTTemplateError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6415:20)\n    at getDuplicateOpenTagException (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6501:17)\n    at http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8789:27\n    at Array.reduce (<anonymous>)\n    at getDelimiterErrors (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8779:50)\n    at parseDelimiters (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8968:33)\n    at Object.parse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:9058:32)\n    at XmlTemplater.preparse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:10226:36)\n    at Docxtemplater2.precompileFile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12345:23)\n    at Docxtemplater2.compile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12447:20)",
+      "properties": {
+        "xtag": "{{FECH",
+        "id": "duplicate_open_tag",
+        "context": "{{FECH",
+        "offset": 71,
+        "explanation": "The tag beginning with \"{{FECH\" has duplicate open tags",
+        "file": "word/document.xml"
+      }
+    },
+    {
+      "name": "TemplateError",
+      "message": "Duplicate close tag, expected one close tag",
+      "stack": "Error: Duplicate close tag, expected one close tag\n    at new XTTemplateError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6415:20)\n    at getDuplicateCloseTagException (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6513:17)\n    at http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8814:25\n    at Array.reduce (<anonymous>)\n    at getDelimiterErrors (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8779:50)\n    at parseDelimiters (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8968:33)\n    at Object.parse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:9058:32)\n    at XmlTemplater.preparse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:10226:36)\n    at Docxtemplater2.precompileFile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12345:23)\n    at Docxtemplater2.compile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12447:20)",
+      "properties": {
+        "xtag": "ECHA}}",
+        "id": "duplicate_close_tag",
+        "context": "ECHA}}",
+        "offset": 78,
+        "explanation": "The tag ending with \"ECHA}}\" has duplicate close tags",
+        "file": "word/document.xml"
+      }
+    },
+    {
+      "name": "TemplateError",
+      "message": "Duplicate open tag, expected one open tag",
+      "stack": "Error: Duplicate open tag, expected one open tag\n    at new XTTemplateError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6415:20)\n    at getDuplicateOpenTagException (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6501:17)\n    at http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8789:27\n    at Array.reduce (<anonymous>)\n    at getDelimiterErrors (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8779:50)\n    at parseDelimiters (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8968:33)\n    at Object.parse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:9058:32)\n    at XmlTemplater.preparse (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:10226:36)\n    at Docxtemplater2.precompileFile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12345:23)\n    at Docxtemplater2.compile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12447:20)",
+      "properties": {
+        "xtag": "{{EDAD",
+        "id": "duplicate_open_tag",
+        "context": "{{EDAD",
+        "offset": 112,
+        "explanation": "The tag beginning with \"{{EDAD\" has duplicate open tags",
+        "file": "word/document.xml"
+      }
+    },
+    {
+      "name": "TemplateError",
+      "message": "Duplicate close tag, expected one close tag",
+      "stack": "Error: Duplicate close tag, expected one close tag\n    at new XTTemplateError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6415:20)\n    at getDuplicateCloseTagException (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6513:17)\n    at http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:8814:25\n    at Array.reduce (<anonymous>)\n    at getDelimiterErrors (http://lo
+docxParser.js:22 Error al extraer marcadores del archivo .docx: 
+XTTemplateError {name: 'TemplateError', message: 'Multi error', stack: 'Error: Multi error\n    at new XTTemplateError (htt…localhost:3000/src/main.js?t=1783464228150:98:25)', properties: {…}}
+message
+: 
+"Multi error"
+name
+: 
+"TemplateError"
+properties
+: 
+{errors: Array(24), id: 'multi_error', explanation: 'The template has multiple errors'}
+stack
+: 
+"Error: Multi error\n    at new XTTemplateError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6415:20)\n    at throwMultiError (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:6480:17)\n    at verifyErrors (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12148:9)\n    at Docxtemplater2.compile (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12470:11)\n    at new Docxtemplater2 (http://localhost:3000/node_modules/.vite/deps/docxtemplater.js?v=53468763:12185:16)\n    at extractMarkers (http://localhost:3000/src/utils/docxParser.js:12:17)\n    at reader.onload (http://localhost:3000/src/main.js?t=1783464228150:98:25)"
+[[Prototype]]
+: 
+Error
+(anonymous)	@	docxParser.js:22
+(anonymous)	@	main.js:98
+FileReader		
+handleFile	@	main.js:117
+(anonymous)	@	main.js:76
