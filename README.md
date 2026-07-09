@@ -83,6 +83,12 @@ Puedes diseñar la plantilla en Microsoft Word utilizando marcadores entre llave
 
 ---
 
+## 🚀 Camino Evolutivo y Próximos Pasos
+* **Portal de Acceso Completo (Actual)**: Por seguridad y control de recursos, inicialmente el generador está bloqueado por completo y requiere autenticación/registro.
+* **Versión de Prueba / Demo (Pendiente)**: En el futuro se brindará una versión de prueba que permita interactuar con la herramienta sin necesidad de crear una cuenta, aunque con limitaciones en beneficios avanzados (como almacenamiento de preferencias y plantillas).
+
+---
+
 ## 📦 Compilación para Producción (GitHub Pages)
 
 Para generar la compilación optimizada y lista para alojarse en GitHub Pages (dentro del directorio `dist/`):
@@ -100,7 +106,8 @@ npm run build
 │   ├── seed_data/            # Datos JSON curriculares para el seed
 │   ├── designed.sql          # Estructura de tablas y RLS de Supabase
 │   ├── load_data.js          # Script NodeJS para poblar la base de datos
-│   └── rls_policies.sql      # Registro de políticas RLS aplicadas
+│   ├── rls_policies.sql      # Registro de políticas RLS aplicadas
+│   └── users_tables.sql      # Estructura y triggers para gestión de usuarios
 ├── src/
 │   ├── api/
 │   │   ├── supabase.js       # Inicialización del cliente Supabase

@@ -8,6 +8,7 @@ import {
   getPerformancesBySkillAndAge 
 } from './api/queries.js';
 import { extractMarkers, generateDocument } from './utils/docxParser.js';
+import { supabase } from './api/supabase.js';
 
 // Estado global de la aplicación
 let templateBuffer = null;
@@ -23,6 +24,26 @@ const markersList = document.getElementById('markersList');
 const formSection = document.getElementById('formSection');
 const generateDocBtn = document.getElementById('generateDocBtn');
 const themeToggleBtn = document.getElementById('themeToggle');
+
+// Elementos de Autenticación
+const authSection = document.getElementById('authSection');
+const appMain = document.getElementById('appMain');
+const userProfile = document.getElementById('userProfile');
+const userAvatar = document.getElementById('userAvatar');
+const userName = document.getElementById('userName');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const loginForm = document.getElementById('loginForm');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+
+const registerForm = document.getElementById('registerForm');
+const registerName = document.getElementById('registerName');
+const registerEmail = document.getElementById('registerEmail');
+const registerPassword = document.getElementById('registerPassword');
+
+const tabLogin = document.getElementById('tabLogin');
+const tabRegister = document.getElementById('tabRegister');
 
 const sessionDateInput = document.getElementById('sessionDate');
 const cycleSelect = document.getElementById('cycleSelect');
@@ -84,7 +105,7 @@ templateFileInput.addEventListener('change', (e) => {
 
 function handleFile(file) {
   if (!file.name.toLowerCase().endsWith('.docx')) {
-    alert('Por favor carga un archivo Word válido (.docx)');
+    showToast('Por favor carga un archivo Word válido (.docx)', 'error');
     return;
   }
 
@@ -110,7 +131,7 @@ function handleFile(file) {
       
       checkFormValidity();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
       fileInfo.textContent = '';
       templateBuffer = null;
     }
@@ -172,7 +193,7 @@ async function loadInitialFormData() {
     populateAreasSelects();
   } catch (error) {
     console.error('Error al inicializar el formulario:', error);
-    alert('Error al conectar con Supabase. Revisa las variables de entorno.');
+    showToast('Error al conectar con Supabase. Revisa las variables de entorno.', 'error');
   }
 }
 
@@ -465,7 +486,7 @@ generateDocBtn.addEventListener('click', async () => {
     clearForm();
   } catch (error) {
     console.error('Error al generar el documento:', error);
-    alert('Ocurrió un error al procesar y rellenar la plantilla.');
+    showToast('Ocurrió un error al procesar y rellenar la plantilla.', 'error');
   } finally {
     generateDocBtn.textContent = '⚡ Generar y Descargar Documento';
     checkFormValidity();
@@ -517,7 +538,7 @@ function clearForm() {
 // --- Lógica del Tema (Oscuro / Claro) ---
 const themeToggleIcon = themeToggleBtn.querySelector('.theme-toggle-icon');
 
-// Cargar preferencia guardada o usar oscuro por defecto
+// Cargar preferencia local guardada
 const savedTheme = localStorage.getItem('theme') || 'dark';
 if (savedTheme === 'light') {
   document.body.classList.add('light-theme');
@@ -526,9 +547,233 @@ if (savedTheme === 'light') {
   themeToggleIcon.textContent = '☀️';
 }
 
-themeToggleBtn.addEventListener('click', () => {
+themeToggleBtn.addEventListener('click', async () => {
   document.body.classList.toggle('light-theme');
   const isLight = document.body.classList.contains('light-theme');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  const theme = isLight ? 'light' : 'dark';
+  localStorage.setItem('theme', theme);
   themeToggleIcon.textContent = isLight ? '🌙' : '☀️';
+
+  // Si el usuario está autenticado, guardar su preferencia en la base de datos
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    try {
+      await supabase
+        .from('user_preferences')
+        .update({ theme })
+        .eq('id', session.user.id);
+    } catch (err) {
+      console.error('Error al guardar preferencia de tema en base de datos:', err);
+    }
+  }
 });
+
+// Cargar el tema desde Supabase
+async function loadUserTheme(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('theme')
+      .eq('id', userId)
+      .single();
+    if (data && data.theme) {
+      const isLight = data.theme === 'light';
+      if (isLight) {
+        document.body.classList.add('light-theme');
+        themeToggleIcon.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.body.classList.remove('light-theme');
+        themeToggleIcon.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+  } catch (err) {
+    console.warn('No se pudieron cargar las preferencias del usuario de Supabase:', err);
+  }
+}
+
+// --- Gestión de Pestañas de Autenticación ---
+tabLogin.addEventListener('click', () => {
+  tabLogin.classList.add('active');
+  tabRegister.classList.remove('active');
+  loginForm.classList.remove('hidden');
+  registerForm.classList.add('hidden');
+});
+
+tabRegister.addEventListener('click', () => {
+  tabRegister.classList.add('active');
+  tabLogin.classList.remove('active');
+  registerForm.classList.remove('hidden');
+  loginForm.classList.add('hidden');
+});
+
+// --- Manejo de Inicio de Sesión ---
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+
+  const submitBtn = loginForm.querySelector('.auth-submit-btn');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Ingresando...';
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    showToast('¡Ingreso exitoso!', 'success');
+  } catch (err) {
+    console.error('Error de login:', err);
+    showToast(`Error de ingreso: ${err.message || err.error_description || 'Verifica tus credenciales'}`, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+});
+
+// --- Manejo de Registro ---
+registerForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = registerName.value.trim();
+  const email = registerEmail.value.trim();
+  const password = registerPassword.value;
+
+  const submitBtn = registerForm.querySelector('.auth-submit-btn');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Registrando...';
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    // Supabase puede requerir confirmación por email
+    if (data.session) {
+      showToast('¡Registro exitoso!', 'success');
+    } else {
+      showToast('¡Cuenta creada! Por favor revisa tu correo electrónico para verificar tu cuenta.', 'info');
+      // Limpiar campos e ir a pestaña de login
+      registerForm.reset();
+      tabLogin.click();
+    }
+  } catch (err) {
+    console.error('Error de registro:', err);
+    showToast(`Error de registro: ${err.message || err.error_description || 'Ocurrió un problema'}`, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+});
+
+// --- Manejo de Cierre de Sesión ---
+logoutBtn.addEventListener('click', async () => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    // Limpiar caché o estado local si es necesario
+    clearForm();
+    if (templateBuffer) {
+      // Limpiar plantilla cargada para seguridad
+      templateBuffer = null;
+      fileInfo.textContent = '';
+      markerPreviewContainer.classList.add('hidden');
+      formSection.classList.add('disabled');
+    }
+  } catch (err) {
+    console.error('Error al cerrar sesión:', err);
+    showToast('Error al cerrar sesión.', 'error');
+  }
+});
+
+// --- Escucha de Estado de Autenticación ---
+supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log('Evento de Autenticación Supabase:', event);
+  
+  if (session) {
+    const user = session.user;
+    const email = user.email;
+    const name = user.user_metadata?.name || user.user_metadata?.full_name || email;
+    
+    // Rellenar widget de perfil
+    userName.textContent = name;
+    userAvatar.textContent = name.charAt(0).toUpperCase();
+    userProfile.classList.remove('hidden');
+    
+    // Mostrar app main y ocultar portal de acceso
+    appMain.classList.remove('hidden');
+    authSection.classList.add('hidden');
+    
+    // Cargar preferencia de tema de la base de datos
+    await loadUserTheme(user.id);
+  } else {
+    // Limpiar UI de perfil
+    userName.textContent = '';
+    userAvatar.textContent = '';
+    userProfile.classList.add('hidden');
+    
+    // Ocultar app main y mostrar portal de acceso
+    appMain.classList.add('hidden');
+    authSection.classList.remove('hidden');
+  }
+});
+
+// --- Notificaciones Flotantes Estéticas (Toasts) ---
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  let icon = '✨';
+  if (type === 'error') {
+    icon = '❌';
+  } else if (type === 'info') {
+    icon = 'ℹ️';
+  }
+
+  toast.innerHTML = `
+    <span class="toast-icon">${icon}</span>
+    <span class="toast-message">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // Forzar reflow para animación
+  toast.offsetHeight;
+  toast.classList.add('show');
+
+  // Remover después de 4 segundos
+  setTimeout(() => {
+    toast.classList.remove('show');
+    
+    // Función auxiliar para remover del DOM de forma segura
+    const removeToast = () => {
+      toast.removeEventListener('transitionend', removeToast);
+      toast.remove();
+    };
+    
+    toast.addEventListener('transitionend', removeToast);
+    
+    // Backup por si la animación no dispara transitionend
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, 500);
+  }, 4000);
+}
