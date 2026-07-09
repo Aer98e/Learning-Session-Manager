@@ -112,11 +112,25 @@ npm run build
 │   ├── api/
 │   │   ├── supabase.js       # Inicialización del cliente Supabase
 │   │   └── queries.js        # Consultas optimizadas a base de datos
+│   ├── components/           # Componentes UI autónomos (Auth, Theme, Loader, Form, Toast)
+│   │   ├── auth.js
+│   │   ├── formManager.js
+│   │   ├── templateLoader.js
+│   │   ├── theme.js
+│   │   └── toast.js
+│   ├── styles/               # Hojas de estilo CSS segmentadas
+│   │   ├── auth.css
+│   │   ├── cards.css
+│   │   ├── form.css
+│   │   ├── layout.css
+│   │   ├── toast.css
+│   │   └── variables.css
 │   ├── utils/
-│   │   └── docxParser.js     # Sanitizador XML y generador .docx cliente
-│   ├── main.js               # Controlador y renderizado de la UI
-│   └── style.css             # Estilos CSS, Modo Oscuro/Claro y Glassmorphism
-├── index.html                # Plantilla HTML principal
+│   │   ├── docxParser.js     # Sanitizador XML y generador .docx cliente
+│   │   └── state.js          # Estado global compartido de la aplicación
+│   ├── main.js               # Orquestador e inicializador de componentes
+│   └── style.css             # Archivo CSS maestro que importa submódulos
+├── index.html                # Plantilla HTML principal (contenedores vacíos)
 ├── package.json              # Scripts npm y dependencias del proyecto
 └── README.md                 # Documentación técnica (este archivo)
 ```
