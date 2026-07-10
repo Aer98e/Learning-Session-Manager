@@ -36,132 +36,129 @@
     <section class="card auth-card" id="authSection"></section>
 
     <main class="app-main hidden" id="appMain">
-      <!-- Sección 1: Carga de Plantilla -->
-      <section class="card upload-card" id="uploadSection">
-        <div class="card-header">
-          <span class="step-num">01</span>
-          <h2>Cargar Plantilla de Word (.docx)</h2>
+      <!-- Sección: Listado de Sesiones del Docente -->
+      <section class="card sessions-list-card" id="sessionsListSection">
+        <div class="card-header-flex">
+          <div class="card-header-left">
+            <span class="step-num">📅</span>
+            <h2>Mis Sesiones de Aprendizaje</h2>
+          </div>
+          <button class="new-session-btn" id="createNewSessionBtn">
+            ➕ Nueva Sesión
+          </button>
         </div>
-        <div class="upload-area" id="dropZone">
-          <div class="upload-icon">📄</div>
-          <p class="upload-text">Arrastra tu plantilla aquí o <span class="browse-btn">busca un archivo</span></p>
-          <input type="file" id="templateFileInput" accept=".docx" style="display: none;">
-          <p class="file-info" id="fileInfo"></p>
-        </div>
-        <div class="marker-preview hidden" id="markerPreviewContainer">
-          <h3>Marcadores Detectados en la Plantilla:</h3>
-          <div class="markers-list" id="markersList"></div>
+        <div class="sessions-grid" id="sessionsGrid">
+          <p class="placeholder-text">Cargando tus sesiones guardadas...</p>
         </div>
       </section>
 
-      <!-- Sección 2: Configuración (Formulario dinámico) -->
-      <section class="card form-card disabled" id="formSection">
-        <div class="card-header">
-          <span class="step-num">02</span>
-          <h2>Configuración de la Sesión</h2>
+      <!-- Sección: Editor de Sesión (Formulario Jerárquico) -->
+      <section class="card editor-card hidden" id="editorSection">
+        <div class="card-header-flex">
+          <div class="card-header-left">
+            <span class="step-num">📝</span>
+            <h2 id="editorTitle">Crear Nueva Sesión de Aprendizaje</h2>
+          </div>
+          <button class="back-btn" id="cancelEditBtn">
+            ⬅️ Volver a la Lista
+          </button>
         </div>
         
         <form id="sessionForm" onsubmit="return false;">
-          <!-- Bloque General -->
-          <div class="form-group">
-            <label for="sessionDate">Fecha de la Sesión</label>
-            <input type="date" id="sessionDate" required>
+          <input type="hidden" id="editSessionId" value="">
+
+          <!-- Barra del Wizard (Paso a Paso) -->
+          <div class="wizard-steps" id="wizardSteps">
+            <div class="wizard-step active" data-step="1">1. Propósitos de Aprendizaje</div>
+            <div class="wizard-step" data-step="2">2. Horarios y Momentos</div>
+            <div class="wizard-step" data-step="3">3. Contenido Pedagógico</div>
           </div>
 
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="cycleSelect">Ciclo</label>
-              <select id="cycleSelect" required>
-                <option value="">Selecciona un ciclo...</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="ageSelect">Edad / Grado</label>
-              <select id="ageSelect" required disabled>
-                <option value="">Selecciona la edad...</option>
-              </select>
-            </div>
-          </div>
+          <!-- PASO 1: PROPÓSITOS DE APRENDIZAJE -->
+          <div class="step-pane active" id="stepPane1">
+            <!-- Bloque General de la Sesión -->
+            <div class="form-section-group">
+              <h3 class="form-subtitle">Datos Generales de la Sesión</h3>
+              <div class="form-grid-three">
+                <div class="form-group">
+                  <label for="sessionTitle">Título General de la Sesión</label>
+                  <input type="text" id="sessionTitle" placeholder="Ej. Conocemos el sonido fonético (U)" required>
+                </div>
 
-          <!-- SECCIÓN DINÁMICA DE COMPETENCIAS -->
-          <div id="competenciesContainer">
-            <!-- Sección 1 (Siempre visible) -->
-            <div class="section-block" id="section1">
-              <h3 class="section-title">Competencia Principal (Sección 1)</h3>
-              
-              <div class="form-group">
-                <label for="areaSelect1">Área</label>
-                <select id="areaSelect1" class="area-select" data-section="1" required>
-                  <option value="">Selecciona el área...</option>
-                </select>
-              </div>
+                <div class="form-group">
+                  <label for="sessionDate">Fecha de Ejecución</label>
+                  <input type="date" id="sessionDate" required>
+                </div>
 
-              <div class="form-group">
-                <label for="skillSelect1">Competencia</label>
-                <select id="skillSelect1" class="skill-select" data-section="1" required disabled>
-                  <option value="">Selecciona la competencia...</option>
-                </select>
-              </div>
-
-              <div class="preview-box hidden" id="standardPreview1">
-                <strong>Estándar de Aprendizaje:</strong>
-                <p class="preview-text" id="standardText1"></p>
-              </div>
-
-              <div class="preview-box hidden" id="abilitiesPreview1">
-                <strong>Capacidades Asociadas:</strong>
-                <ul class="preview-list" id="abilitiesList1"></ul>
-              </div>
-
-              <div class="form-group">
-                <label>Selecciona Desempeños</label>
-                <div class="performances-list disabled-list" id="performancesList1">
-                  <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
+                <div class="form-grid-two">
+                  <div class="form-group">
+                    <label for="cycleSelect">Ciclo Curricular</label>
+                    <select id="cycleSelect" required>
+                      <option value="">Selecciona un ciclo...</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="ageSelect">Edad / Grado</label>
+                    <select id="ageSelect" required disabled>
+                      <option value="">Selecciona la edad...</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Sección 2 (Dinámica, se muestra si existen marcadores 2 en el Word) -->
-            <div class="section-block hidden" id="section2">
-              <h3 class="section-title">Competencia Secundaria (Sección 2)</h3>
-              
-              <div class="form-group">
-                <label for="areaSelect2">Área</label>
-                <select id="areaSelect2" class="area-select" data-section="2">
-                  <option value="">Selecciona el área...</option>
-                </select>
-              </div>
+            <!-- CONTENEDOR DINÁMICO DE COMPONENTES CURRICULARES (ACTIVIDADES/TALLERES) -->
+            <div class="components-container" id="componentsContainer">
+              <!-- Los bloques curriculares se inyectarán dinámicamente aquí -->
+            </div>
 
-              <div class="form-group">
-                <label for="skillSelect2">Competencia</label>
-                <select id="skillSelect2" class="skill-select" data-section="2" disabled>
-                  <option value="">Selecciona la competencia...</option>
-                </select>
-              </div>
-
-              <div class="preview-box hidden" id="standardPreview2">
-                <strong>Estándar de Aprendizaje:</strong>
-                <p class="preview-text" id="standardText2"></p>
-              </div>
-
-              <div class="preview-box hidden" id="abilitiesPreview2">
-                <strong>Capacidades Asociadas:</strong>
-                <ul class="preview-list" id="abilitiesList2"></ul>
-              </div>
-
-              <div class="form-group">
-                <label>Selecciona Desempeños</label>
-                <div class="performances-list disabled-list" id="performancesList2">
-                  <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
-                </div>
-              </div>
+            <!-- Acciones del Paso 1 -->
+            <div class="step-navigation-actions">
+              <button type="button" class="add-component-btn" id="addComponentBtn">
+                ➕ Agregar Actividad o Taller
+              </button>
+              <button type="button" class="nav-btn next" id="btnNextToStep2">
+                Siguiente: Horarios ➡️
+              </button>
             </div>
           </div>
 
-          <button type="submit" class="generate-btn" id="generateDocBtn" disabled>
-            ⚡ Generar y Descargar Documento
-          </button>
+          <!-- PASO 2: HORARIOS Y MOMENTOS (TIMELINE Y SUBMOMENTOS) -->
+          <div class="step-pane" id="stepPane2">
+            <!-- Contenedor dinámico de Timelines por cada componente -->
+            <div id="timelineStepContainer">
+              <!-- Se inyecta dinámicamente -->
+            </div>
+
+            <!-- Acciones del Paso 2 -->
+            <div class="step-navigation-actions">
+              <button type="button" class="nav-btn prev" id="btnPrevToStep1">
+                ⬅️ Anterior: Propósitos
+              </button>
+              <button type="button" class="nav-btn next" id="btnNextToStep3">
+                Siguiente: Contenidos ➡️
+              </button>
+            </div>
+          </div>
+
+          <!-- PASO 3: CONTENIDO PEDAGÓGICO (APLICACIÓN Y RECURSOS) -->
+          <div class="step-pane" id="stepPane3">
+            <!-- Contenedor dinámico de paneles de detalles por componente -->
+            <div id="contentStepContainer">
+              <!-- Se inyecta dinámicamente -->
+            </div>
+
+            <!-- Acciones del Paso 3 -->
+            <div class="step-navigation-actions">
+              <button type="button" class="nav-btn prev" id="btnPrevToStep2">
+                ⬅️ Anterior: Horarios
+              </button>
+              <button type="submit" class="save-session-btn" id="saveSessionBtn">
+                💾 Guardar en Supabase
+              </button>
+            </div>
+          </div>
         </form>
       </section>
     </main>
@@ -173,6 +170,45 @@
 
   <!-- Contenedor para notificaciones flotantes (Toasts) -->
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Modal Flotante para configurar Divisiones de Horarios y Momentos (v8) -->
+  <div id="timelineModal" class="modal-overlay hidden-screen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 id="modalTitle">Configurar División de Horario</h4>
+        <button type="button" class="close-modal-btn" id="btnCloseModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modalBlockId">
+        <input type="hidden" id="modalMomentIdx">
+        
+        <div class="form-group">
+          <label for="modalMomentTitle">Momento Pedagógico (Nombre)</label>
+          <input type="text" id="modalMomentTitle" placeholder="Ej. DESARROLLO DE LA ACTIVIDAD" required>
+        </div>
+
+        <div class="form-group">
+          <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Horarios y Subbloques (Submomentos)</label>
+          <div id="modalSubhorariosContainer" class="submoments-editor-list" style="margin-bottom: 0.5rem;">
+            <!-- Filas dinámicas de hora de inicio + subtítulo se inyectan aquí -->
+          </div>
+          <button type="button" class="add-submoment-btn" id="btnModalAddSubhorario" style="margin-top: 0.25rem;">
+            ➕ Agregar otro subhorario con su hora
+          </button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn delete" id="btnDeleteModal">🗑️ Eliminar Momento</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="modal-btn cancel" id="btnCancelModal">Cancelar</button>
+          <button type="button" class="modal-btn save" id="btnSaveModal">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista de Previsualización de Impresión PDF (Oculta en la pantalla principal y fuera de app-container) -->
+  <section id="printPreviewSection" class="print-preview-container hidden-screen"></section>
 
   <!-- Main script entry point -->
   <script type="module" src="./src/main.js"></script>

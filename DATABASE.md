@@ -147,3 +147,86 @@ Para evitar la gestión manual de perfiles en el cliente, la base de datos sincr
 *   **Lógica**:
     1.  Se dispara al insertarse un perfil en `public.users`.
     2.  Inserta automáticamente la configuración inicial en `public.user_preferences` asociada al ID del usuario, usando el tema `light` por defecto.
+
+---
+
+## 📅 4. Tablas del Módulo del Diseñador de Sesiones (Esquema v5)
+
+Para dar soporte a la creación de sesiones interactivas multipropósito, se implementa el siguiente esquema de tablas en Supabase con persistencia jerárquica unificada en formato `JSONB`.
+
+```mermaid
+erDiagram
+    users ||--o{ learning_sessions : "1:N"
+    learning_sessions ||--o{ components_sessions : "1:N (cascade)"
+    components_sessions ||--o{ moment_components_session : "1:N (cascade)"
+    moments ||--o{ moment_components_session : "1:N (cascade)"
+    users ||--o{ moments : "1:N (catálogo)"
+```
+
+### 4.1 Tabla: `learning_sessions`
+Almacena la cabecera principal de la sesión de aprendizaje planificada por el docente.
+
+*   `id` (`uuid`, `PRIMARY KEY`, default `gen_random_uuid()`)
+*   `user_id` (`uuid`, `NOT NULL`, `REFERENCES users(id) ON DELETE CASCADE`) - Docente propietario de la sesión.
+*   `title` (`varchar(255)`, `NOT NULL`) - Título general de la sesión (ej. *“Conocemos la vocal A”*).
+*   `session_date` (`date`, `NOT NULL`) - Fecha de ejecución de la sesión.
+*   `created_at` (`timestamptz`, default `now()`)
+
+### 4.2 Tabla: `components_sessions`
+Representa cada actividad de la sesión (Actividad Principal o Taller/Secundaria) vinculada opcionalmente a un propósito curricular.
+
+*   `id` (`uuid`, `PRIMARY KEY`, default `gen_random_uuid()`)
+*   `session_id` (`uuid`, `NOT NULL`, `REFERENCES learning_sessions(id) ON DELETE CASCADE`)
+*   `title` (`varchar(255)`) - Título específico (requerido para talleres).
+*   `type` (`varchar(50)`, default `'principal'`) - Toma los valores `'principal'` o `'taller'`.
+*   `order_index` (`int`, `NOT NULL`, default `0`) - Orden de visualización en el Wizard.
+
+### 4.3 Tabla: `moments` (Biblioteca de Momentos y Horarios Unificados)
+Contiene la planificación pedagógica de los momentos consolidados en un esquema jerárquico unificado dentro de un campo `JSONB`. Los momentos creados pueden ser reciclados y compartidos en la biblioteca personal del docente.
+
+*   `id` (`uuid`, `PRIMARY KEY`, default `gen_random_uuid()`)
+*   `user_id` (`uuid`, `NOT NULL`, `REFERENCES users(id) ON DELETE CASCADE`)
+*   `title` (`varchar(255)`, `NOT NULL`) - Nombre del momento (ej. *DESARROLLO DE LA ACTIVIDAD*, *JUEGO LIBRE EN SECTORES*).
+*   `moments_data` (`jsonb`, `NOT NULL`, default `'[]'::jsonb`) - Estructura jerárquica de subhorarios, secuencias de aplicación y recursos específicos por subsección.
+*   `created_at` (`timestamptz`, default `now()`)
+
+**Esquema del JSONB `moments_data`:**
+```json
+[
+  {
+    "start_time": "08:30",
+    "end_time": "09:40",
+    "subtitle": "Inicio",
+    "application": [
+      {
+        "section_title": "Asamblea",
+        "items": [
+          "Nos saludamos cantando una canción de bienvenida.",
+          "Establecemos los acuerdos de convivencia del día."
+        ],
+        "resources": [
+          "Parlante bluetooth",
+          "Siluetas de títeres"
+        ]
+      }
+    ]
+  }
+]
+```
+
+### 4.4 Tabla: `moment_components_session` (Enlace de Momentos)
+Tabla de relación intermedia que asocia un componente de sesión con sus momentos programados y su orden secuencial.
+
+*   `component_id` (`uuid`, `NOT NULL`, `REFERENCES components_sessions(id) ON DELETE CASCADE`)
+*   `moment_id` (`uuid`, `NOT NULL`, `REFERENCES moments(id) ON DELETE CASCADE`)
+*   `order_index` (`int`, `NOT NULL`, default `0`) - Orden cronológico del momento en la actividad.
+*   *Restricción*: `PRIMARY KEY (component_id, moment_id)`
+
+---
+
+## 🔒 5. Políticas RLS del Diseñador de Sesiones
+*   **`learning_sessions` / `moments`:** 
+    *   CRUD permitido únicamente si el usuario autenticado es el propietario (`auth.uid() = user_id`).
+*   **`components_sessions` / `moment_components_session`:**
+    *   CRUD permitido a través de políticas basadas en existencia (`EXISTS`) que verifican que el componente o la relación intermedia pertenezca a una sesión cuyo `user_id` sea igual a `auth.uid()`.
+

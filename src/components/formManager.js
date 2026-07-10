@@ -5,337 +5,609 @@ import {
   getSkillsByArea, 
   getAbilitiesBySkill, 
   getStandardBySkillAndCycle, 
-  getPerformancesBySkillAndAge 
+  getPerformancesBySkillAndAge,
+  getMyMoments,
+  getSessions,
+  getSessionDetails,
+  saveSession,
+  deleteSession
 } from '../api/queries.js';
-import { generateDocument } from '../utils/docxParser.js';
 import { state } from '../utils/state.js';
 import { showToast } from './toast.js';
+import { printSessionPDF } from '../utils/pdfGenerator.js';
+import { supabase } from '../api/supabase.js';
+import { setupTimeline, cardTimelines } from './timelineManager.js';
+
+// Estado Local de la UI
+let userId = null;
+let currentCycles = [];
+let currentAreas = [];
+let userMomentsCatalog = []; 
+let currentWizardStep = 1;
 
 // Elementos del DOM
+let appMain = null;
+let sessionsListSection = null;
+let sessionsGrid = null;
+let createNewSessionBtn = null;
+let editorSection = null;
+let editorTitle = null;
+let cancelEditBtn = null;
 let sessionForm = null;
+let editSessionIdInput = null;
+let sessionTitleInput = null;
 let sessionDateInput = null;
 let cycleSelect = null;
 let ageSelect = null;
-let generateDocBtn = null;
+let componentsContainer = null;
+let addComponentBtn = null;
+let saveSessionBtn = null;
 
-let sections = {};
+// Elementos del Wizard
+let wizardSteps = null;
+let timelineStepContainer = null;
+let contentStepContainer = null;
+let btnNextToStep2 = null;
+let btnNextToStep3 = null;
+let btnPrevToStep1 = null;
+let btnPrevToStep2 = null;
 
 export function initFormManager() {
+  appMain = document.getElementById('appMain');
+  sessionsListSection = document.getElementById('sessionsListSection');
+  sessionsGrid = document.getElementById('sessionsGrid');
+  createNewSessionBtn = document.getElementById('createNewSessionBtn');
+  editorSection = document.getElementById('editorSection');
+  editorTitle = document.getElementById('editorTitle');
+  cancelEditBtn = document.getElementById('cancelEditBtn');
   sessionForm = document.getElementById('sessionForm');
+  editSessionIdInput = document.getElementById('editSessionId');
+  sessionTitleInput = document.getElementById('sessionTitle');
   sessionDateInput = document.getElementById('sessionDate');
   cycleSelect = document.getElementById('cycleSelect');
   ageSelect = document.getElementById('ageSelect');
-  generateDocBtn = document.getElementById('generateDocBtn');
+  componentsContainer = document.getElementById('componentsContainer');
+  addComponentBtn = document.getElementById('addComponentBtn');
+  saveSessionBtn = document.getElementById('saveSessionBtn');
 
-  // Configuración de los bloques de competencias
-  sections = {
-    1: {
-      block: document.getElementById('section1'),
-      areaSelect: document.getElementById('areaSelect1'),
-      skillSelect: document.getElementById('skillSelect1'),
-      standardPreview: document.getElementById('standardPreview1'),
-      standardText: document.getElementById('standardText1'),
-      abilitiesPreview: document.getElementById('abilitiesPreview1'),
-      abilitiesList: document.getElementById('abilitiesList1'),
-      performancesList: document.getElementById('performancesList1'),
-      selectedAbilities: [],
-      selectedStandard: ''
-    },
-    2: {
-      block: document.getElementById('section2'),
-      areaSelect: document.getElementById('areaSelect2'),
-      skillSelect: document.getElementById('skillSelect2'),
-      standardPreview: document.getElementById('standardPreview2'),
-      standardText: document.getElementById('standardText2'),
-      abilitiesPreview: document.getElementById('abilitiesPreview2'),
-      abilitiesList: document.getElementById('abilitiesList2'),
-      performancesList: document.getElementById('performancesList2'),
-      selectedAbilities: [],
-      selectedStandard: ''
+  // Inicialización de elementos del Wizard
+  wizardSteps = document.getElementById('wizardSteps');
+  timelineStepContainer = document.getElementById('timelineStepContainer');
+  contentStepContainer = document.getElementById('contentStepContainer');
+  btnNextToStep2 = document.getElementById('btnNextToStep2');
+  btnNextToStep3 = document.getElementById('btnNextToStep3');
+  btnPrevToStep1 = document.getElementById('btnPrevToStep1');
+  btnPrevToStep2 = document.getElementById('btnPrevToStep2');
+
+  // --- Registrar Eventos Generales ---
+
+  document.addEventListener('app:login', async (e) => {
+    userId = e.detail?.user?.id;
+    if (userId) {
+      appMain.classList.remove('hidden');
+      await loadInitialData();
+      await loadSessionsList();
     }
-  };
-
-  // --- Registrar Eventos ---
-
-  // Escuchar cuando la plantilla es cargada
-  document.addEventListener('app:template-loaded', async () => {
-    toggleSection2ByMarkers(state.detectedMarkers);
-    await loadInitialFormData();
   });
 
-  // Escuchar cuando el usuario cierra sesión
   document.addEventListener('app:logout', () => {
+    userId = null;
+    appMain.classList.add('hidden');
     clearForm();
   });
 
-  // Cambios generales de fecha
-  sessionDateInput.addEventListener('change', () => checkFormValidity());
+  createNewSessionBtn.addEventListener('click', () => {
+    openEditor();
+  });
 
-  // Escuchar cambios en el Ciclo
+  cancelEditBtn.addEventListener('click', () => {
+    showSessionsList();
+  });
+
+  addComponentBtn.addEventListener('click', () => {
+    createComponentCard();
+  });
   cycleSelect.addEventListener('change', async (e) => {
-    const cycleId = e.target.value;
-    ageSelect.value = '';
-    ageSelect.disabled = !cycleId;
-    
-    // Resetear filtros dependientes
-    resetSection(1);
-    resetSection(2);
-    
-    if (cycleId) {
-      try {
-        const ages = await getAgesByCycle(cycleId);
-        ageSelect.innerHTML = '<option value="">Selecciona la edad...</option>';
-        ages.forEach(a => {
-          const opt = document.createElement('option');
-          opt.value = a.id;
-          opt.textContent = a.name;
-          ageSelect.appendChild(opt);
-        });
-      } catch (error) {
-        console.error('Error al cargar edades:', error);
-        showToast('Error al cargar las edades del ciclo.', 'error');
-      }
-    } else {
-      ageSelect.innerHTML = '<option value="">Selecciona la edad...</option>';
-    }
-    checkFormValidity();
+    await loadAgesForCycle(e.target.value);
   });
 
-  // Escuchar cambios en la Edad
   ageSelect.addEventListener('change', () => {
-    // Al cambiar la edad, se deben recargar los desempeños si ya hay competencia seleccionada
-    [1, 2].forEach(num => {
-      const skillId = sections[num].skillSelect.value;
-      if (skillId) {
-        loadPerformances(num, skillId, ageSelect.value);
-      }
-    });
-    checkFormValidity();
-  });
-
-  // Configurar listeners de áreas y competencias por bloque (1 y 2)
-  [1, 2].forEach(num => {
-    const sec = sections[num];
+    const ageId = ageSelect.value;
+    const cards = componentsContainer.querySelectorAll('.component-block');
     
-    // Cambio de Área
-    sec.areaSelect.addEventListener('change', async (e) => {
-      const areaId = e.target.value;
-      resetSection(num);
-      
-      sec.skillSelect.disabled = !areaId;
-      if (areaId) {
-        try {
-          const skills = await getSkillsByArea(areaId);
-          sec.skillSelect.innerHTML = '<option value="">Selecciona la competencia...</option>';
-          skills.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.name;
-            sec.skillSelect.appendChild(opt);
-          });
-        } catch (error) {
-          console.error('Error al cargar competencias:', error);
-          showToast('Error al cargar las competencias del área.', 'error');
-        }
+    cards.forEach(card => {
+      const skillSelect = card.querySelector('.skill-select');
+      const blockNum = card.dataset.blockId;
+      if (skillSelect && skillSelect.value) {
+        loadPerformancesForCard(card, blockNum, skillSelect.value, ageId);
       }
-      checkFormValidity();
-    });
-
-    // Cambio de Competencia
-    sec.skillSelect.addEventListener('change', async (e) => {
-      const skillId = e.target.value;
-      const cycleId = cycleSelect.value;
-      const ageId = ageSelect.value;
-      
-      // Limpiar datos previos del bloque
-      sec.selectedAbilities = [];
-      sec.selectedStandard = '';
-      sec.standardPreview.classList.add('hidden');
-      sec.standardText.textContent = '';
-      sec.abilitiesPreview.classList.add('hidden');
-      sec.abilitiesList.innerHTML = '';
-      sec.performancesList.innerHTML = '<p class="placeholder-text">Cargando desempeños...</p>';
-      sec.performancesList.classList.add('disabled-list');
-
-      if (skillId) {
-        try {
-          // 1. Obtener Estándar de Aprendizaje
-          const standardDescription = await getStandardBySkillAndCycle(skillId, cycleId);
-          if (standardDescription) {
-            sec.selectedStandard = standardDescription;
-            sec.standardText.textContent = standardDescription;
-            sec.standardPreview.classList.remove('hidden');
-          }
-
-          // 2. Obtener Capacidades
-          const abilities = await getAbilitiesBySkill(skillId);
-          if (abilities && abilities.length > 0) {
-            sec.selectedAbilities = abilities.map(a => a.name);
-            sec.abilitiesList.innerHTML = '';
-            abilities.forEach(a => {
-              const li = document.createElement('li');
-              li.textContent = a.name;
-              sec.abilitiesList.appendChild(li);
-            });
-            sec.abilitiesPreview.classList.remove('hidden');
-          }
-
-          // 3. Obtener Desempeños según edad seleccionada
-          if (ageId) {
-            await loadPerformances(num, skillId, ageId);
-          } else {
-            sec.performancesList.innerHTML = '<p class="placeholder-text">Selecciona una edad para ver los desempeños.</p>';
-          }
-
-        } catch (error) {
-          console.error('Error al cargar detalles de la competencia:', error);
-          showToast('Error al cargar los detalles de la competencia.', 'error');
-          sec.performancesList.innerHTML = '<p class="placeholder-text">Error al cargar datos.</p>';
-        }
-      } else {
-        sec.performancesList.innerHTML = '<p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>';
-      }
-      checkFormValidity();
     });
   });
 
-  // Procesar envío del formulario para generar Word
-  sessionForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!checkFormValidity()) return;
+  // --- Lógica del Wizard (Paso a Paso) ---
 
-    generateDocBtn.disabled = true;
-    generateDocBtn.textContent = '⏳ Procesando plantilla y generando archivo...';
+  // Clic en la barra superior de pasos (solo si son válidos)
+  wizardSteps.querySelectorAll('.wizard-step').forEach(stepEl => {
+    stepEl.addEventListener('click', () => {
+      const step = parseInt(stepEl.dataset.step);
+      if (step === currentWizardStep) return;
 
-    setTimeout(() => {
-      try {
-        const formattedDate = formatDate(sessionDateInput.value);
-        const ageName = ageSelect.options[ageSelect.selectedIndex].textContent;
-        const payload = {};
-
-        // Inyectar FECHA y EDAD
-        if (state.detectedMarkers.includes('FECHA')) payload['FECHA'] = formattedDate;
-        if (state.detectedMarkers.includes('EDAD')) payload['EDAD'] = ageName;
-
-        // Inyectar datos de secciones
-        [1, 2].forEach(num => {
-          const sec = sections[num];
-          const areaName = sec.areaSelect.options[sec.areaSelect.selectedIndex]?.textContent || '';
-          const skillName = sec.skillSelect.options[sec.skillSelect.selectedIndex]?.textContent || '';
-          
-          const abilitiesString = sec.selectedAbilities
-            .map(a => `• ${a}`)
-            .join('\n');
-
-          const checkedBoxes = sec.performancesList.querySelectorAll('input[type="checkbox"]:checked');
-          const performancesString = Array.from(checkedBoxes)
-            .map(cb => `• ${cb.value}`)
-            .join('\n');
-
-          if (num === 1) {
-            if (state.detectedMarkers.includes('AREA')) payload['AREA'] = areaName;
-            if (state.detectedMarkers.includes('AREA1')) payload['AREA1'] = areaName;
-            if (state.detectedMarkers.includes('COMPETENCIA')) payload['COMPETENCIA'] = skillName;
-            if (state.detectedMarkers.includes('COMPETENCIA1')) payload['COMPETENCIA1'] = skillName;
-            if (state.detectedMarkers.includes('ESTANDAR')) payload['ESTANDAR'] = sec.selectedStandard;
-            if (state.detectedMarkers.includes('ESTANDAR1')) payload['ESTANDAR1'] = sec.selectedStandard;
-            if (state.detectedMarkers.includes('CAPACIDADES')) payload['CAPACIDADES'] = abilitiesString;
-            if (state.detectedMarkers.includes('CAPACIDADES1')) payload['CAPACIDADES1'] = abilitiesString;
-            if (state.detectedMarkers.includes('DESEMPEÑOS')) payload['DESEMPEÑOS'] = performancesString;
-            if (state.detectedMarkers.includes('DESEMPEÑOS1')) payload['DESEMPEÑOS1'] = performancesString;
-          } else {
-            if (state.detectedMarkers.includes(`AREA${num}`)) payload[`AREA${num}`] = areaName;
-            if (state.detectedMarkers.includes(`COMPETENCIA${num}`)) payload[`COMPETENCIA${num}`] = skillName;
-            if (state.detectedMarkers.includes(`ESTANDAR${num}`)) payload[`ESTANDAR${num}`] = sec.selectedStandard;
-            if (state.detectedMarkers.includes(`CAPACIDADES${num}`)) payload[`CAPACIDADES${num}`] = abilitiesString;
-            if (state.detectedMarkers.includes(`DESEMPEÑOS${num}`)) payload[`DESEMPEÑOS${num}`] = performancesString;
-          }
-        });
-
-        // Generar archivo
-        const outputBlob = generateDocument(state.templateBuffer, payload);
-
-        // Descargar en navegador
-        const downloadUrl = URL.createObjectURL(outputBlob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = `Sesion_de_Aprendizaje_${sessionDateInput.value}.docx`;
-        document.body.appendChild(a);
-        a.click();
-        
-        document.body.removeChild(a);
-        URL.revokeObjectURL(downloadUrl);
-        
-        showToast('¡Documento generado exitosamente!', 'success');
-        clearForm();
-      } catch (error) {
-        console.error('Error al generar el documento:', error);
-        showToast('Ocurrió un error al procesar y rellenar la plantilla.', 'error');
-      } finally {
-        generateDocBtn.textContent = '⚡ Generar y Descargar Documento';
-        checkFormValidity();
+      if (step > currentWizardStep) {
+        // Validar paso por paso si intentamos avanzar
+        if (currentWizardStep === 1 && !validateStep1()) return;
+        if (currentWizardStep === 2 && !validateStep2()) return;
       }
-    }, 100);
+      setWizardStep(step);
+    });
+  });
+
+  // Navegación con botones
+  btnNextToStep2.addEventListener('click', () => {
+    if (validateStep1()) setWizardStep(2);
+  });
+
+  btnNextToStep3.addEventListener('click', () => {
+    if (validateStep2()) setWizardStep(3);
+  });
+
+  btnPrevToStep1.addEventListener('click', () => {
+    setWizardStep(1);
+  });
+
+  btnPrevToStep2.addEventListener('click', () => {
+    setWizardStep(2);
+  });
+
+  sessionForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (validateStep1() && validateStep2()) {
+      await saveCurrentSession();
+    }
   });
 }
 
-// --- Métodos de Ayuda del Formulario ---
+function setWizardStep(stepNumber) {
+  currentWizardStep = stepNumber;
+  
+  // Cambiar barra superior
+  wizardSteps.querySelectorAll('.wizard-step').forEach(stepEl => {
+    const step = parseInt(stepEl.dataset.step);
+    if (step === stepNumber) {
+      stepEl.classList.add('active');
+    } else {
+      stepEl.classList.remove('active');
+    }
+  });
 
-async function loadInitialFormData() {
+  // Cambiar visualización de los paneles de pasos
+  document.querySelectorAll('.step-pane').forEach(pane => {
+    pane.classList.remove('active');
+  });
+  document.getElementById(`stepPane${stepNumber}`).classList.add('active');
+}
+
+// --- Validaciones de Wizard ---
+
+function validateStep1() {
+  if (!sessionTitleInput.value.trim()) {
+    showToast('El título de la sesión es obligatorio.', 'warning');
+    sessionTitleInput.focus();
+    return false;
+  }
+  if (!sessionDateInput.value) {
+    showToast('La fecha de ejecución es obligatoria.', 'warning');
+    sessionDateInput.focus();
+    return false;
+  }
+  if (!cycleSelect.value) {
+    showToast('Selecciona el ciclo curricular.', 'warning');
+    cycleSelect.focus();
+    return false;
+  }
+  if (!ageSelect.value) {
+    showToast('Selecciona la edad / grado.', 'warning');
+    ageSelect.focus();
+    return false;
+  }
+
+  // Validar que los componentes del Paso 1 tengan Área y Competencia
+  const cards = componentsContainer.querySelectorAll('.component-block');
+  if (cards.length === 0) {
+    showToast('Debes agregar al menos una actividad pedagógica.', 'warning');
+    return false;
+  }
+
+  let ok = true;
+  cards.forEach(card => {
+    const area = card.querySelector('.area-select').value;
+    const skill = card.querySelector('.skill-select').value;
+    const type = card.dataset.type;
+    const title = card.querySelector('.comp-title-input')?.value || '';
+
+    if (type === 'taller' && !title.trim()) {
+      showToast('Los talleres deben tener un título.', 'warning');
+      card.querySelector('.comp-title-input').focus();
+      ok = false;
+    } else if (!area || !skill) {
+      showToast('Selecciona el área y la competencia para todas las actividades.', 'warning');
+      ok = false;
+    }
+  });
+
+  return ok;
+}
+
+function validateStep2() {
+  // En la v5, el Paso 2 sólo define los momentos y submomentos, lo cual se autogestiona
+  return true;
+}
+
+// --- Listado de Sesiones ---
+
+async function loadSessionsList() {
+  if (!userId) return;
+  
   try {
-    const cycles = await getCycles();
+    sessionsGrid.innerHTML = '<p class="placeholder-text">Cargando tus sesiones guardadas...</p>';
+    const sessions = await getSessions(userId);
+    userMomentsCatalog = await getMyMoments(userId);
+    renderSessionCards(sessions);
+  } catch (error) {
+    console.error('Error al cargar sesiones:', error);
+    showToast('Error al conectar con la base de datos.', 'error');
+  }
+}
+
+function renderSessionCards(sessions) {
+  sessionsGrid.innerHTML = '';
+  
+  if (!sessions || sessions.length === 0) {
+    sessionsGrid.innerHTML = `
+      <div class="placeholder-text" style="grid-column: 1 / -1; padding: 3rem 0;">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 1rem;">📅</span>
+        <p>No tienes sesiones guardadas todavía.</p>
+        <p style="font-size: 0.85rem; margin-top: 0.25rem;">¡Presiona "Nueva Sesión" para comenzar a planificar!</p>
+      </div>
+    `;
+    return;
+  }
+
+  sessions.forEach(session => {
+    const card = document.createElement('div');
+    card.className = 'session-card';
+    
+    const formattedDate = new Date(session.session_date).toLocaleDateString('es-ES', { 
+      year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' 
+    });
+
+    card.innerHTML = `
+      <div class="session-card-header">
+        <span class="session-card-date">${formattedDate}</span>
+        <h3 class="session-card-title">${session.title}</h3>
+      </div>
+      <div class="session-card-actions">
+        <button class="action-btn edit" data-id="${session.id}">✏️ Editar</button>
+        <button class="action-btn pdf" data-id="${session.id}">📄 Imprimir PDF</button>
+        <button class="action-btn delete" data-id="${session.id}">🗑️ Borrar</button>
+      </div>
+    `;
+
+    card.querySelector('.edit').addEventListener('click', () => editSession(session.id));
+    card.querySelector('.pdf').addEventListener('click', () => printSession(session.id));
+    card.querySelector('.delete').addEventListener('click', () => confirmDeleteSession(session.id, session.title));
+
+    sessionsGrid.appendChild(card);
+  });
+}
+
+function showSessionsList() {
+  editorSection.classList.add('hidden');
+  sessionsListSection.classList.remove('hidden');
+}
+
+function showEditor() {
+  sessionsListSection.classList.add('hidden');
+  editorSection.classList.remove('hidden');
+}
+
+async function loadInitialData() {
+  try {
+    currentCycles = await getCycles();
     cycleSelect.innerHTML = '<option value="">Selecciona un ciclo...</option>';
-    cycles.forEach(c => {
+    currentCycles.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.name;
       cycleSelect.appendChild(opt);
     });
 
-    state.availableAreas = await getAreas();
-    populateAreasSelects();
+    currentAreas = await getAreas();
   } catch (error) {
-    console.error('Error al inicializar el formulario:', error);
-    showToast('Error al conectar con Supabase. Revisa las variables de entorno.', 'error');
+    console.error('Error al inicializar datos:', error);
+    showToast('Error al conectar con Supabase. Verifica tu conexión.', 'error');
   }
 }
 
-function populateAreasSelects() {
-  [1, 2].forEach(num => {
-    const select = sections[num].areaSelect;
-    select.innerHTML = '<option value="">Selecciona el área...</option>';
-    state.availableAreas.forEach(a => {
-      const opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = a.name;
-      select.appendChild(opt);
-    });
-  });
-}
+function openEditor(sessionData = null) {
+  clearForm();
+  showEditor();
+  setWizardStep(1);
 
-function toggleSection2ByMarkers(markers) {
-  const hasSection2 = markers.some(m => m.endsWith('2'));
-  
-  if (hasSection2) {
-    sections[2].block.classList.remove('hidden');
-    sections[2].areaSelect.required = true;
-    sections[2].skillSelect.required = true;
+  if (sessionData) {
+    editorTitle.textContent = 'Editar Sesión de Aprendizaje';
+    editSessionIdInput.value = sessionData.id;
+    sessionTitleInput.value = sessionData.title;
+    sessionDateInput.value = sessionData.session_date;
   } else {
-    sections[2].block.classList.add('hidden');
-    sections[2].areaSelect.required = false;
-    sections[2].skillSelect.required = false;
-    sections[2].areaSelect.value = '';
-    resetSection(2);
+    editorTitle.textContent = 'Crear Nueva Sesión de Aprendizaje';
+    createComponentCard({ type: 'principal', title: '' });
   }
 }
 
-async function loadPerformances(sectionNum, skillId, ageId) {
-  const sec = sections[sectionNum];
+function clearForm() {
+  editSessionIdInput.value = '';
+  sessionTitleInput.value = '';
+  sessionDateInput.value = '';
+  cycleSelect.value = '';
+  ageSelect.value = '';
+  ageSelect.disabled = true;
+  ageSelect.innerHTML = '<option value="">Selecciona la edad...</option>';
+  componentsContainer.innerHTML = '';
+  timelineStepContainer.innerHTML = '';
+  contentStepContainer.innerHTML = '';
+  
+for (const key in cardTimelines) {
+    delete cardTimelines[key];
+  }
+}
+
+// --- Creación Dinámica de Componentes por Pasos del Wizard ---
+
+let blockCounter = 0;
+
+function createComponentCard(compData = null) {
+  blockCounter++;
+  const blockId = `block_${blockCounter}`;
+
+  // 1. INYECTAR EN PASO 1 (PROPOSITOS CURRICULARES)
+  const curricularCard = document.createElement('div');
+  const initialType = compData?.type || (blockCounter === 1 ? 'principal' : 'taller');
+  curricularCard.className = `component-block ${initialType === 'taller' ? 'taller' : ''}`;
+  curricularCard.id = `curricular_${blockId}`;
+  curricularCard.dataset.blockId = blockId;
+  curricularCard.dataset.type = initialType;
+
+  curricularCard.innerHTML = `
+    <div class="component-header">
+      <h4>
+        <span class="comp-icon">${initialType === 'taller' ? '🎨' : '📖'}</span>
+        <select class="comp-type-select" style="margin-left: 0.5rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 700; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--color-text-main);">
+          <option value="principal" ${initialType === 'principal' ? 'selected' : ''}>📖 Actividad Principal</option>
+          <option value="taller" ${initialType === 'taller' ? 'selected' : ''}>🎨 Taller / Actividad Secundaria</option>
+        </select>
+      </h4>
+      <button type="button" class="remove-comp-btn">Eliminar Actividad</button>
+    </div>
+
+    <div class="form-group component-title-group ${initialType === 'taller' ? '' : 'hidden'}">
+      <label>Título de la Actividad / Taller</label>
+      <input type="text" class="comp-title-input" placeholder="Ej. Jugamos a ser indiecitos" value="${compData?.title || ''}">
+    </div>
+
+    <div class="curricular-settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+        <h5 class="form-subtitle" style="font-size: 1rem; margin: 0;">Propósito de Aprendizaje</h5>
+        <button type="button" class="add-bullet-btn clear-purpose-btn" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: rgba(255,255,255,0.03);">🧹 Limpiar Propósito</button>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Área Curricular</label>
+          <select class="area-select">
+            <option value="">Selecciona el área...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Competencia</label>
+          <select class="skill-select" disabled>
+            <option value="">Selecciona la competencia...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="preview-box standard-preview hidden">
+        <strong>Estándar de Aprendizaje:</strong>
+        <p class="preview-text standard-text"></p>
+      </div>
+
+      <div class="preview-box abilities-preview hidden">
+        <strong>Capacidades:</strong>
+        <ul class="preview-list abilities-list"></ul>
+      </div>
+
+      <div class="form-group">
+        <label>Desempeños a Evaluar</label>
+        <div class="performances-list disabled-list">
+          <p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Poblar selectores de áreas
+  const areaSelect = curricularCard.querySelector('.area-select');
+  currentAreas.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name;
+    areaSelect.appendChild(opt);
+  });
+
+  // 2. INYECTAR EN PASO 2 (HORARIOS Y MOMENTOS - TIMELINE)
+  const timelineCard = document.createElement('div');
+  timelineCard.className = `timeline-component-card`;
+  timelineCard.id = `timeline_${blockId}`;
+
+  // 3. INYECTAR EN PASO 3 (CONTENIDO PEDAGÓGICO - DETALLES)
+  const contentCard = document.createElement('div');
+  contentCard.className = `content-component-card`;
+  contentCard.id = `content_${blockId}`;
+
+  // Eliminar componente
+  const removeBtn = curricularCard.querySelector('.remove-comp-btn');
+  removeBtn.addEventListener('click', () => {
+    const totalComps = componentsContainer.querySelectorAll('.component-block').length;
+    if (totalComps > 1) {
+      const confirmDel = window.confirm('¿Estás seguro de que deseas eliminar este componente de la sesión? Se borrarán sus propósitos y horarios.');
+      if (confirmDel) {
+        curricularCard.remove();
+        timelineCard.remove();
+        contentCard.remove();
+        delete cardTimelines[blockId];
+        showToast('Actividad eliminada.', 'success');
+      }
+    } else {
+      showToast('Debe haber al menos una actividad o taller en la sesión.', 'warning');
+    }
+  });
+
+  // Limpiar Propósito
+  curricularCard.querySelector('.clear-purpose-btn').addEventListener('click', () => {
+    areaSelect.value = '';
+    resetCurricularPreview(curricularCard, true);
+    showToast('Propósito curricular limpiado.', 'info');
+  });
+
+  // Evento del selector de Tipo de Componente
+  const typeSelect = curricularCard.querySelector('.comp-type-select');
+  typeSelect.addEventListener('change', (e) => {
+    const selectedType = e.target.value;
+    curricularCard.dataset.type = selectedType;
+
+    const iconSpan = curricularCard.querySelector('.comp-icon');
+    iconSpan.textContent = selectedType === 'taller' ? '🎨' : '📖';
+
+    const titleGroup = curricularCard.querySelector('.component-title-group');
+    if (selectedType === 'taller') {
+      curricularCard.classList.add('taller');
+      titleGroup.classList.remove('hidden');
+    } else {
+      curricularCard.classList.remove('taller');
+      titleGroup.classList.add('hidden');
+    }
+
+    // Refrescar renderizado del timeline con la configuración adecuada
+    setupTimeline(timelineCard, contentCard, blockId, cardTimelines[blockId]?.moments, selectedType);
+    showToast(`Componente cambiado a ${selectedType === 'taller' ? 'Taller / Secundario' : 'Actividad Principal'}.`, 'info');
+  });
+
+  // Cambio de Área en Paso 1
+  areaSelect.addEventListener('change', async (e) => {
+    const areaId = e.target.value;
+    const skillSelect = curricularCard.querySelector('.skill-select');
+    resetCurricularPreview(curricularCard);
+    
+    skillSelect.disabled = !areaId;
+    if (areaId) {
+      try {
+        const skills = await getSkillsByArea(areaId);
+        skillSelect.innerHTML = '<option value="">Selecciona la competencia...</option>';
+        skills.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name;
+          skillSelect.appendChild(opt);
+        });
+      } catch (error) {
+        console.error('Error al cargar competencias:', error);
+        showToast('Error al cargar competencias.', 'error');
+      }
+    }
+  });
+
+  // Cambio de Competencia en Paso 1
+  const skillSelect = curricularCard.querySelector('.skill-select');
+  skillSelect.addEventListener('change', async (e) => {
+    const skillId = e.target.value;
+    const cycleId = cycleSelect.value;
+    const ageId = ageSelect.value;
+    
+    resetCurricularPreview(curricularCard, false);
+
+    if (skillId) {
+      try {
+        if (cycleId) {
+          const standardText = await getStandardBySkillAndCycle(skillId, cycleId);
+          if (standardText) {
+            curricularCard.querySelector('.standard-text').textContent = standardText;
+            curricularCard.querySelector('.standard-preview').classList.remove('hidden');
+          }
+        }
+
+        const abilities = await getAbilitiesBySkill(skillId);
+        const abilitiesList = curricularCard.querySelector('.abilities-list');
+        abilitiesList.innerHTML = '';
+        if (abilities && abilities.length > 0) {
+          abilities.forEach(a => {
+            const li = document.createElement('li');
+            li.textContent = a.name;
+            abilitiesList.appendChild(li);
+          });
+          curricularCard.querySelector('.abilities-preview').classList.remove('hidden');
+        }
+
+        if (ageId) {
+          await loadPerformancesForCard(curricularCard, blockId, skillId, ageId);
+        } else {
+          curricularCard.querySelector('.performances-list').innerHTML = '<p class="placeholder-text">Selecciona una edad en la cabecera para cargar los desempeños.</p>';
+        }
+      } catch (error) {
+        console.error('Error al cargar datos curriculares:', error);
+        showToast('Error al cargar datos de competencia.', 'error');
+      }
+    }
+  });
+
+  componentsContainer.appendChild(curricularCard);
+  timelineStepContainer.appendChild(timelineCard);
+  contentStepContainer.appendChild(contentCard);
+
+  // Inicializar línea de tiempo y momentos (v9)
+  setupTimeline(timelineCard, contentCard, blockId, compData?.moments, initialType);
+
+  // Cargar datos curriculares previos
+  if (compData && compData.area_id) {
+    areaSelect.value = compData.area_id;
+    const event = new Event('change');
+    areaSelect.dispatchEvent(event);
+    
+    setTimeout(() => {
+      skillSelect.value = compData.skill_id;
+      const eventSkill = new Event('change');
+      skillSelect.dispatchEvent(eventSkill);
+
+      setTimeout(() => {
+        if (compData.performances) {
+          compData.performances.forEach(perfId => {
+            const cb = curricularCard.querySelector(`#perf_${blockId}_${perfId}`);
+            if (cb) cb.checked = true;
+          });
+        }
+      }, 300);
+    }, 150);
+  }
+}
+
+async function loadPerformancesForCard(card, blockId, skillId, ageId) {
+  const perfList = card.querySelector('.performances-list');
+  perfList.innerHTML = '<p class="placeholder-text">Cargando desempeños...</p>';
+  perfList.classList.remove('disabled-list');
+
   try {
     const performances = await getPerformancesBySkillAndAge(skillId, ageId);
-    sec.performancesList.innerHTML = '';
-    sec.performancesList.classList.remove('disabled-list');
-
+    perfList.innerHTML = '';
+    
     if (performances && performances.length > 0) {
       performances.forEach(p => {
         const item = document.createElement('div');
@@ -343,105 +615,232 @@ async function loadPerformances(sectionNum, skillId, ageId) {
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.value = p.description;
-        cb.id = `perf_${sectionNum}_${p.id}`;
+        cb.value = p.id;
+        cb.id = `perf_${blockId}_${p.id}`;
+        cb.className = 'perf-checkbox';
 
         const lbl = document.createElement('label');
         lbl.setAttribute('for', cb.id);
         lbl.textContent = p.description;
 
-        cb.addEventListener('change', () => checkFormValidity());
+        item.appendChild(cb);
+        item.appendChild(lbl);
+        
         item.addEventListener('click', (e) => {
           if (e.target !== cb && e.target !== lbl) {
             cb.checked = !cb.checked;
-            checkFormValidity();
           }
         });
 
-        item.appendChild(cb);
-        item.appendChild(lbl);
-        sec.performancesList.appendChild(item);
+        perfList.appendChild(item);
       });
     } else {
-      sec.performancesList.innerHTML = '<p class="placeholder-text">No hay desempeños registrados para esta edad.</p>';
+      perfList.innerHTML = '<p class="placeholder-text">No hay desempeños registrados para esta edad.</p>';
     }
   } catch (error) {
     console.error('Error al cargar desempeños:', error);
-    showToast('Error al cargar los desempeños correspondientes.', 'error');
+    perfList.innerHTML = '<p class="placeholder-text">Error al cargar desempeños de la base de datos.</p>';
   }
 }
 
-function resetSection(num) {
-  const sec = sections[num];
-  if (!sec) return;
+function resetCurricularPreview(card, resetSkillSelect = true) {
+  const stdPreview = card.querySelector('.standard-preview');
+  const stdText = card.querySelector('.standard-text');
+  const abPreview = card.querySelector('.abilities-preview');
+  const abList = card.querySelector('.abilities-list');
+  const perfList = card.querySelector('.performances-list');
 
-  sec.skillSelect.innerHTML = '<option value="">Selecciona la competencia...</option>';
-  sec.skillSelect.disabled = true;
-  sec.selectedAbilities = [];
-  sec.selectedStandard = '';
+  stdPreview.classList.add('hidden');
+  stdText.textContent = '';
+  abPreview.classList.add('hidden');
+  abList.innerHTML = '';
+  perfList.innerHTML = '<p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>';
+  perfList.classList.add('disabled-list');
+
+  if (resetSkillSelect) {
+    const skillSelect = card.querySelector('.skill-select');
+    skillSelect.innerHTML = '<option value="">Selecciona la competencia...</option>';
+    skillSelect.disabled = true;
+  }
+}
+
+// Función helper asíncrona para cargar edades y evitar pérdidas de sincronía
+async function loadAgesForCycle(cycleId) {
+  ageSelect.value = '';
+  ageSelect.disabled = !cycleId;
   
-  sec.standardPreview.classList.add('hidden');
-  sec.standardText.textContent = '';
-  sec.abilitiesPreview.classList.add('hidden');
-  sec.abilitiesList.innerHTML = '';
-  
-  sec.performancesList.innerHTML = '<p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>';
-  sec.performancesList.classList.add('disabled-list');
-}
+  const perfContainers = componentsContainer.querySelectorAll('.performances-list');
+  perfContainers.forEach(container => {
+    container.innerHTML = '<p class="placeholder-text">Selecciona una competencia y edad para ver los desempeños.</p>';
+    container.classList.add('disabled-list');
+  });
 
-function checkFormValidity() {
-  if (!sessionForm) return false;
-
-  const dateOk = !!sessionDateInput.value;
-  const cycleOk = !!cycleSelect.value;
-  const ageOk = !!ageSelect.value;
-
-  // Validar sección 1
-  const s1AreaOk = !!sections[1].areaSelect.value;
-  const s1SkillOk = !!sections[1].skillSelect.value;
-  const s1Checked = sections[1].performancesList.querySelectorAll('input[type="checkbox"]:checked').length > 0;
-  const s1Ok = s1AreaOk && s1SkillOk && s1Checked;
-
-  // Validar sección 2 si está visible
-  const isS2Visible = !sections[2].block.classList.contains('hidden');
-  let s2Ok = true;
-  if (isS2Visible) {
-    const s2AreaOk = !!sections[2].areaSelect.value;
-    const s2SkillOk = !!sections[2].skillSelect.value;
-    const s2Checked = sections[2].performancesList.querySelectorAll('input[type="checkbox"]:checked').length > 0;
-    s2Ok = s2AreaOk && s2SkillOk && s2Checked;
-  }
-
-  const isValid = dateOk && cycleOk && ageOk && s1Ok && s2Ok && state.templateBuffer !== null;
-  generateDocBtn.disabled = !isValid;
-  return isValid;
-}
-
-function clearForm() {
-  if (sessionDateInput) sessionDateInput.value = '';
-  if (cycleSelect) cycleSelect.value = '';
-  if (ageSelect) {
-    ageSelect.value = '';
-    ageSelect.disabled = true;
-  }
-
-  [1, 2].forEach(num => {
-    if (sections[num]) {
-      sections[num].areaSelect.value = '';
-      resetSection(num);
+  if (cycleId) {
+    try {
+      const ages = await getAgesByCycle(cycleId);
+      ageSelect.innerHTML = '<option value="">Selecciona la edad...</option>';
+      ages.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = a.name;
+        ageSelect.appendChild(opt);
+      });
+    } catch (error) {
+      console.error('Error al cargar edades:', error);
+      showToast('Error al cargar las edades del ciclo.', 'error');
     }
-  });
-
-  checkFormValidity();
+  } else {
+    ageSelect.innerHTML = '<option value="">Selecciona la edad...</option>';
+  }
 }
 
-function formatDate(dateString) {
-  const parts = dateString.split('-');
-  const date = new Date(parts[0], parts[1] - 1, parts[2]);
-  return date.toLocaleDateString('es-ES', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+// --- Operaciones de Base de Datos ---
+
+async function editSession(sessionId) {
+  try {
+    showToast('Cargando detalles de la sesión...', 'info');
+    const details = await getSessionDetails(sessionId);
+    
+    openEditor(details);
+    
+    const comp0 = details.components_sessions?.[0];
+    let cycleId = '';
+    let ageId = '';
+    
+    if (comp0 && comp0.performance_components_session && comp0.performance_components_session.length > 0) {
+      const firstPerfId = comp0.performance_components_session[0].performance_id;
+      
+      const { data: perfData } = await supabase
+        .from('performances')
+        .select('age_id, ages(cycle_id)')
+        .eq('id', firstPerfId)
+        .single();
+      
+      if (perfData) {
+        ageId = perfData.age_id;
+        cycleId = perfData.ages?.cycle_id;
+      }
+    }
+
+    if (cycleId) {
+      cycleSelect.value = cycleId;
+      // Cargar edades de forma asíncrona y esperar que termine
+      await loadAgesForCycle(cycleId);
+      
+      if (ageId) {
+        ageSelect.value = ageId;
+        ageSelect.disabled = false;
+      }
+
+      if (details.components_sessions && details.components_sessions.length > 0) {
+        const sortedComps = details.components_sessions.sort((a, b) => a.order_index - b.order_index);
+        
+        // Crear componentes
+        for (const comp of sortedComps) {
+          const compPayload = {
+            id: comp.id,
+            type: comp.type,
+            title: comp.title,
+            area_id: comp.purpose_components_session?.[0]?.learning_purposes?.area_id || null,
+            skill_id: comp.purpose_components_session?.[0]?.learning_purposes?.skill_id || null,
+            performances: comp.performance_components_session?.map(p => p.performance_id) || [],
+            moments: comp.moment_components_session?.sort((a, b) => a.order_index - b.order_index).map(m => ({
+              id: m.moment_id,
+              title: m.moments?.title,
+              moments_data: m.moments?.moments_data
+            })) || []
+          };
+          
+          createComponentCard(compPayload);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error al editar sesión:', error);
+    showToast('Error al cargar la información de la sesión.', 'error');
+  }
+}
+
+async function saveCurrentSession() {
+  if (!userId) return;
+
+  saveSessionBtn.disabled = true;
+  saveSessionBtn.textContent = '⏳ Guardando sesión...';
+
+  try {
+    const sessionData = {
+      id: editSessionIdInput.value || null,
+      title: sessionTitleInput.value,
+      session_date: sessionDateInput.value,
+      components: []
+    };
+
+    const cardBlocks = componentsContainer.querySelectorAll('.component-block');
+    
+    cardBlocks.forEach((card, index) => {
+      const blockId = card.dataset.blockId;
+      const type = card.dataset.type;
+      const title = card.querySelector('.comp-title-input')?.value || '';
+      const areaId = card.querySelector('.area-select').value;
+      const skillId = card.querySelector('.skill-select').value;
+
+      const checkedBoxes = card.querySelectorAll('.perf-checkbox:checked');
+      const performances = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+
+      // !!! ASIGNAR EL order_index SECUENCIAL PARA EVITAR EL BUG POSTGRES NOT NULL !!!
+      const moments = (cardTimelines[blockId]?.moments || []).map((m, idx) => ({
+        ...m,
+        order_index: idx
+      }));
+
+      sessionData.components.push({
+        type,
+        title: type === 'taller' ? title : sessionData.title,
+        order_index: index,
+        area_id: areaId ? parseInt(areaId) : null,
+        skill_id: skillId ? parseInt(skillId) : null,
+        performances,
+        moments
+      });
+    });
+
+    await saveSession(userId, sessionData);
+    
+    showToast('¡Sesión guardada exitosamente!', 'success');
+    clearForm();
+    showSessionsList();
+    await loadSessionsList();
+  } catch (error) {
+    console.error('Error al guardar sesión:', error);
+    showToast('Error al guardar la sesión en Supabase.', 'error');
+  } finally {
+    saveSessionBtn.disabled = false;
+    saveSessionBtn.textContent = '💾 Guardar en Supabase';
+  }
+}
+
+async function confirmDeleteSession(sessionId, title) {
+  const confirm = window.confirm(`¿Estás seguro de que deseas eliminar la sesión "${title}"? esta acción no se puede deshacer.`);
+  if (confirm) {
+    try {
+      showToast('Eliminando sesión...', 'info');
+      await deleteSession(sessionId);
+      showToast('Sesión eliminada.', 'success');
+      await loadSessionsList();
+    } catch (error) {
+      console.error('Error al borrar sesión:', error);
+      showToast('Error al eliminar la sesión.', 'error');
+    }
+  }
+}
+
+async function printSession(sessionId) {
+  try {
+    showToast('Generando vista de impresión...', 'info');
+    const details = await getSessionDetails(sessionId);
+    printSessionPDF(details);
+  } catch (error) {
+    console.error('Error al preparar impresión:', error);
+    showToast('Error al generar el PDF de la sesión.', 'error');
+  }
 }

@@ -208,6 +208,9 @@ export function initAuth() {
       
       // Cargar preferencia de tema de la base de datos
       await loadUserTheme(user.id);
+
+      // NOTIFICACIÓN: Informar a otros componentes que el usuario ingresó con éxito
+      document.dispatchEvent(new CustomEvent('app:login', { detail: { user } }));
     } else {
       // Limpiar UI de perfil
       userName.textContent = '';
