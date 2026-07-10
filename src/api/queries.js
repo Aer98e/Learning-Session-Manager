@@ -307,36 +307,21 @@ export async function saveSession(userId, sessionData) {
     for (const mom of component.moments) {
       let momentId = mom.id;
 
-      // Si es un momento nuevo, validamos catálogo
+      // Si no tiene ID asignado (es nuevo o fue editado), se crea una plantilla nueva inmutable en el catálogo
       if (!momentId) {
-        // Buscar si ya existe un momento idéntico
-        const { data: existingMom, error: momError } = await supabase
+        // Insertar en biblioteca
+        const { data: insertedMom, error: insertMomError } = await supabase
           .from('moments')
+          .insert([{
+            user_id: userId,
+            title: mom.title,
+            moments_data: mom.moments_data
+          }])
           .select('id')
-          .eq('user_id', userId)
-          .eq('title', mom.title)
-          .eq('moments_data', JSON.stringify(mom.moments_data))
-          .maybeSingle();
+          .single();
 
-        if (momError) throw momError;
-
-        if (existingMom) {
-          momentId = existingMom.id;
-        } else {
-          // Insertar en biblioteca
-          const { data: insertedMom, error: insertMomError } = await supabase
-            .from('moments')
-            .insert([{
-              user_id: userId,
-              title: mom.title,
-              moments_data: mom.moments_data
-            }])
-            .select('id')
-            .single();
-
-          if (insertMomError) throw insertMomError;
-          momentId = insertedMom.id;
-        }
+        if (insertMomError) throw insertMomError;
+        momentId = insertedMom.id;
       }
 
       // Crear enlace de momento en la sesión

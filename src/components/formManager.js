@@ -787,11 +787,17 @@ async function saveCurrentSession() {
       const checkedBoxes = card.querySelectorAll('.perf-checkbox:checked');
       const performances = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
 
-      // !!! ASIGNAR EL order_index SECUENCIAL PARA EVITAR EL BUG POSTGRES NOT NULL !!!
-      const moments = (cardTimelines[blockId]?.moments || []).map((m, idx) => ({
-        ...m,
-        order_index: idx
-      }));
+      // !!! COMPARACIÓN ESTRUCTURAL PROFUNDA PARA EL RECICLAJE CON COPY-ON-WRITE (v10) !!!
+      const moments = (cardTimelines[blockId]?.moments || []).map((m, idx) => {
+        // Intentar buscar match exacto en la biblioteca local del usuario
+        const catalogMatch = userMomentsCatalog.find(catMom => areMomentsEqual(m, catMom));
+        return {
+          id: catalogMatch ? catalogMatch.id : null, // Si coincide, reutiliza el ID, si no, se guarda como plantilla nueva (inmutabilidad)
+          title: m.title,
+          moments_data: m.moments_data,
+          order_index: idx
+        };
+      });
 
       sessionData.components.push({
         type,
@@ -843,4 +849,49 @@ async function printSession(sessionId) {
     console.error('Error al preparar impresión:', error);
     showToast('Error al generar el PDF de la sesión.', 'error');
   }
+}
+
+// Función helper de comparación profunda estructural para la inmutabilidad de la biblioteca de momentos
+function areMomentsEqual(momA, momB) {
+  if (momA.title.trim().toUpperCase() !== momB.title.trim().toUpperCase()) return false;
+  
+  const dataA = momA.moments_data || [];
+  const dataB = momB.moments_data || [];
+  
+  if (dataA.length !== dataB.length) return false;
+  
+  for (let i = 0; i < dataA.length; i++) {
+    const subA = dataA[i];
+    const subB = dataB[i];
+    
+    if (subA.start_time !== subB.start_time) return false;
+    if (subA.end_time !== subB.end_time) return false;
+    if ((subA.subtitle || '') !== (subB.subtitle || '')) return false;
+    
+    // Comparar secuencia de aplicación
+    const appA = subA.application || [];
+    const appB = subB.application || [];
+    if (appA.length !== appB.length) return false;
+    
+    for (let j = 0; j < appA.length; j++) {
+      const secA = appA[j];
+      const secB = appB[j];
+      
+      if ((secA.section_title || '') !== (secB.section_title || '')) return false;
+      
+      // Viñetas de aplicación
+      const itemsA = secA.items || [];
+      const itemsB = secB.items || [];
+      if (itemsA.length !== itemsB.length) return false;
+      if (itemsA.some((val, idx) => val !== itemsB[idx])) return false;
+      
+      // Viñetas de recursos
+      const resA = secA.resources || [];
+      const resB = secB.resources || [];
+      if (resA.length !== resB.length) return false;
+      if (resA.some((val, idx) => val !== resB[idx])) return false;
+    }
+  }
+  
+  return true;
 }
