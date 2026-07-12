@@ -148,6 +148,15 @@ Para evitar la gestión manual de perfiles en el cliente, la base de datos sincr
     1.  Se dispara al insertarse un perfil en `public.users`.
     2.  Inserta automáticamente la configuración inicial en `public.user_preferences` asociada al ID del usuario, usando el tema `light` por defecto.
 
+### 3.3 Trigger: `trg_cleanup_orphan_moments` (Mantenimiento y Recolección de Basura de Momentos)
+*   **Evento**: `AFTER DELETE OR UPDATE ON moment_components_session`
+*   **Función**: `cleanup_orphan_moments()`
+*   **Configuración**: `SECURITY DEFINER`
+*   **Lógica**:
+    1.  Se dispara en tiempo real tras desvincularse un momento de un componente (por eliminación de sesión o edición).
+    2.  Verifica mediante una consulta indexada si el `moment_id` de la fila afectada sigue referenciado por algún otro componente de la aplicación.
+    3.  Si no existen relaciones activas (el momento quedó huérfano), elimina de forma inmediata el registro de la tabla `public.moments` para optimizar el almacenamiento de Supabase.
+
 ---
 
 ## 📅 4. Tablas del Módulo del Diseñador de Sesiones (Esquema v5)

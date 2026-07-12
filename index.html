@@ -171,6 +171,52 @@
   <!-- Contenedor para notificaciones flotantes (Toasts) -->
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- Modal Flotante para seleccionar plantilla de sesión (v11) -->
+  <div id="templateSelectionModal" class="modal-overlay hidden-screen">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h4>Nueva Sesión de Aprendizaje</h4>
+        <button type="button" class="close-modal-btn" id="btnCancelTemplateModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 1.25rem; color: var(--color-text-muted);">
+          ¿Cómo deseas comenzar tu planificación pedagógica?
+        </p>
+        
+        <div class="template-options-grid">
+          <label class="template-option-card">
+            <input type="radio" name="startMode" value="blank" checked>
+            <div class="option-content">
+              <span class="option-icon">📝</span>
+              <strong>Iniciar en Blanco</strong>
+              <p>Comienza una planificación limpia desde cero.</p>
+            </div>
+          </label>
+
+          <label class="template-option-card">
+            <input type="radio" name="startMode" value="template">
+            <div class="option-content">
+              <span class="option-icon">📋</span>
+              <strong>Usar Sesión como Plantilla</strong>
+              <p>Clona propósitos, horarios y contenidos de una sesión anterior.</p>
+            </div>
+          </label>
+        </div>
+
+        <div id="templateSessionSelectGroup" class="form-group hidden-screen" style="margin-top: 1.25rem;">
+          <label for="templateSessionSelect" style="font-weight: 700; margin-bottom: 0.35rem; display: block;">Selecciona la Sesión Plantilla</label>
+          <select id="templateSessionSelect" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 6px; font-size: 0.9rem;">
+            <option value="">Cargando sesiones...</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions" style="justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="modal-btn cancel" id="btnCancelTemplateModalActions">Cancelar</button>
+        <button type="button" class="modal-btn save" id="btnConfirmTemplate">Comenzar Planificación</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Flotante para configurar Divisiones de Horarios y Momentos (v8) -->
   <div id="timelineModal" class="modal-overlay hidden-screen">
     <div class="modal-card">
@@ -184,7 +230,7 @@
         
         <div class="form-group">
           <label for="modalMomentTitle">Momento Pedagógico (Nombre)</label>
-          <input type="text" id="modalMomentTitle" placeholder="Ej. DESARROLLO DE LA ACTIVIDAD" required>
+          <input type="text" id="modalMomentTitle" list="momentTitlesDatalist" placeholder="Ej. DESARROLLO DE LA ACTIVIDAD" required>
         </div>
 
         <div class="form-group">
@@ -206,6 +252,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Catálogo dinámico para sugerir títulos de momentos al docente (v12) -->
+  <datalist id="momentTitlesDatalist"></datalist>
 
   <!-- Vista de Previsualización de Impresión PDF (Oculta en la pantalla principal y fuera de app-container) -->
   <section id="printPreviewSection" class="print-preview-container hidden-screen"></section>

@@ -24,6 +24,7 @@ let currentCycles = [];
 let currentAreas = [];
 let userMomentsCatalog = []; 
 let currentWizardStep = 1;
+let userSessionsList = []; // Lista local de sesiones para usar como plantillas
 
 // Elementos del DOM
 let appMain = null;
@@ -33,6 +34,14 @@ let createNewSessionBtn = null;
 let editorSection = null;
 let editorTitle = null;
 let cancelEditBtn = null;
+
+// Elementos del Modal de Plantillas (v11)
+let templateSelectionModal = null;
+let btnCancelTemplateModal = null;
+let btnCancelTemplateModalActions = null;
+let btnConfirmTemplate = null;
+let templateSessionSelect = null;
+let templateSessionSelectGroup = null;
 let sessionForm = null;
 let editSessionIdInput = null;
 let sessionTitleInput = null;
@@ -70,6 +79,14 @@ export function initFormManager() {
   addComponentBtn = document.getElementById('addComponentBtn');
   saveSessionBtn = document.getElementById('saveSessionBtn');
 
+  // Inicialización de elementos del Modal de Plantillas (v11)
+  templateSelectionModal = document.getElementById('templateSelectionModal');
+  btnCancelTemplateModal = document.getElementById('btnCancelTemplateModal');
+  btnCancelTemplateModalActions = document.getElementById('btnCancelTemplateModalActions');
+  btnConfirmTemplate = document.getElementById('btnConfirmTemplate');
+  templateSessionSelect = document.getElementById('templateSessionSelect');
+  templateSessionSelectGroup = document.getElementById('templateSessionSelectGroup');
+
   // Inicialización de elementos del Wizard
   wizardSteps = document.getElementById('wizardSteps');
   timelineStepContainer = document.getElementById('timelineStepContainer');
@@ -96,12 +113,51 @@ export function initFormManager() {
     clearForm();
   });
 
+  // Nueva Sesión abre el Modal de Selección de Modo (En Blanco / Plantilla)
   createNewSessionBtn.addEventListener('click', () => {
-    openEditor();
+    openTemplateSelectionModal();
   });
 
+  // Cancelar Modal de Plantillas
+  const closeTemplateModal = () => {
+    templateSelectionModal.classList.add('hidden-screen');
+  };
+  btnCancelTemplateModal.addEventListener('click', closeTemplateModal);
+  btnCancelTemplateModalActions.addEventListener('click', closeTemplateModal);
+
+  // Alternar visualización del selector de sesiones pasadas según el modo elegido
+  templateSelectionModal.querySelectorAll('input[name="startMode"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'template') {
+        templateSessionSelectGroup.classList.remove('hidden-screen');
+      } else {
+        templateSessionSelectGroup.classList.add('hidden-screen');
+      }
+    });
+  });
+
+  // Confirmar Selección de Modal de Plantillas
+  btnConfirmTemplate.addEventListener('click', async () => {
+    const mode = templateSelectionModal.querySelector('input[name="startMode"]:checked').value;
+    if (mode === 'blank') {
+      templateSelectionModal.classList.add('hidden-screen');
+      openEditor(null);
+    } else {
+      const templateId = templateSessionSelect.value;
+      if (!templateId) {
+        showToast('Selecciona una sesión de la lista para usar como plantilla.', 'warning');
+        return;
+      }
+      templateSelectionModal.classList.add('hidden-screen');
+      await loadSessionAsTemplate(templateId);
+    }
+  });;
+
   cancelEditBtn.addEventListener('click', () => {
-    showSessionsList();
+    const confirmExit = window.confirm("¿Estás seguro de que deseas regresar a la lista? Se perderán todos los cambios no guardados en esta sesión.");
+    if (confirmExit) {
+      showSessionsList();
+    }
   });
 
   addComponentBtn.addEventListener('click', () => {
@@ -250,8 +306,10 @@ async function loadSessionsList() {
   try {
     sessionsGrid.innerHTML = '<p class="placeholder-text">Cargando tus sesiones guardadas...</p>';
     const sessions = await getSessions(userId);
+    userSessionsList = sessions || [];
     userMomentsCatalog = await getMyMoments(userId);
     renderSessionCards(sessions);
+    populateMomentsDatalist(); // Cargar catálogo predictivo en datalist (v12)
   } catch (error) {
     console.error('Error al cargar sesiones:', error);
     showToast('Error al conectar con la base de datos.', 'error');
@@ -576,26 +634,72 @@ function createComponentCard(compData = null) {
   // Inicializar línea de tiempo y momentos (v9)
   setupTimeline(timelineCard, contentCard, blockId, compData?.moments, initialType);
 
-  // Cargar datos curriculares previos
+  // Cargar datos curriculares previos de forma secuencial y determinista (v11)
   if (compData && compData.area_id) {
-    areaSelect.value = compData.area_id;
-    const event = new Event('change');
-    areaSelect.dispatchEvent(event);
-    
-    setTimeout(() => {
-      skillSelect.value = compData.skill_id;
-      const eventSkill = new Event('change');
-      skillSelect.dispatchEvent(eventSkill);
-
-      setTimeout(() => {
-        if (compData.performances) {
-          compData.performances.forEach(perfId => {
-            const cb = curricularCard.querySelector(`#perf_${blockId}_${perfId}`);
-            if (cb) cb.checked = true;
+    (async () => {
+      try {
+        // 1. Asignar área
+        areaSelect.value = compData.area_id;
+        
+        // 2. Cargar competencias de forma explícita
+        const skills = await getSkillsByArea(compData.area_id);
+        skillSelect.innerHTML = '<option value="">Selecciona la competencia...</option>';
+        skills.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name;
+          skillSelect.appendChild(opt);
+        });
+        skillSelect.disabled = false;
+        
+        // 3. Asignar competencia
+        skillSelect.value = compData.skill_id;
+        
+        // 4. Cargar capacidades y estándar correspondientes
+        const abilities = await getAbilitiesBySkill(compData.skill_id);
+        const abPreview = curricularCard.querySelector('.abilities-preview');
+        const abList = curricularCard.querySelector('.abilities-list');
+        abList.innerHTML = '';
+        if (abilities && abilities.length > 0) {
+          abilities.forEach(a => {
+            const li = document.createElement('li');
+            li.textContent = a.name;
+            abList.appendChild(li);
           });
+          abPreview.classList.remove('hidden');
+        } else {
+          abPreview.classList.add('hidden');
         }
-      }, 300);
-    }, 150);
+
+        const cycleId = cycleSelect.value;
+        const stdPreview = curricularCard.querySelector('.standard-preview');
+        const stdText = curricularCard.querySelector('.standard-text');
+        if (cycleId) {
+          const standard = await getStandardBySkillAndCycle(compData.skill_id, cycleId);
+          stdText.textContent = standard || 'No hay estándar registrado para esta competencia y ciclo.';
+          stdPreview.classList.remove('hidden');
+        } else {
+          stdPreview.classList.add('hidden');
+          stdText.textContent = '';
+        }
+
+        // 5. Cargar desempeños para la edad
+        const ageId = ageSelect.value;
+        if (ageId) {
+          await loadPerformancesForCard(curricularCard, blockId, compData.skill_id, ageId);
+          
+          // 6. Marcar desempeños seleccionados
+          if (compData.performances) {
+            compData.performances.forEach(perfId => {
+              const cb = curricularCard.querySelector(`#perf_${blockId}_${perfId}`);
+              if (cb) cb.checked = true;
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error al precargar datos curriculares del componente:', error);
+      }
+    })();
   }
 }
 
@@ -696,65 +800,76 @@ async function loadAgesForCycle(cycleId) {
 
 // --- Operaciones de Base de Datos ---
 
+// Función común para inicializar el editor y poblarlo con datos (v11)
+async function populateEditorWithSession(details, isTemplate = false) {
+  // 1. Abrir el editor en modo plantilla o edición
+  const sessionData = {
+    ...details,
+    id: isTemplate ? null : details.id,
+    title: isTemplate ? `${details.title} (Copia)` : details.title,
+    session_date: isTemplate ? "" : details.session_date
+  };
+  
+  openEditor(sessionData);
+
+  // 2. Cargar ciclo y edad
+  const comp0 = details.components_sessions?.[0];
+  let cycleId = '';
+  let ageId = '';
+  
+  if (comp0 && comp0.performance_components_session && comp0.performance_components_session.length > 0) {
+    const firstPerfId = comp0.performance_components_session[0].performance_id;
+    
+    const { data: perfData } = await supabase
+      .from('performances')
+      .select('age_id, ages(cycle_id)')
+      .eq('id', firstPerfId)
+      .single();
+    
+    if (perfData) {
+      ageId = perfData.age_id;
+      cycleId = perfData.ages?.cycle_id;
+    }
+  }
+
+  if (cycleId) {
+    cycleSelect.value = cycleId;
+    await loadAgesForCycle(cycleId);
+    
+    if (ageId) {
+      ageSelect.value = ageId;
+      ageSelect.disabled = false;
+    }
+
+    if (details.components_sessions && details.components_sessions.length > 0) {
+      const sortedComps = details.components_sessions.sort((a, b) => a.order_index - b.order_index);
+      
+      for (const comp of sortedComps) {
+        const compPayload = {
+          id: isTemplate ? null : comp.id, // Si es plantilla, limpiamos el id del componente para forzar inserción
+          type: comp.type,
+          title: comp.title,
+          area_id: comp.purpose_components_session?.[0]?.learning_purposes?.area_id || null,
+          skill_id: comp.purpose_components_session?.[0]?.learning_purposes?.skill_id || null,
+          performances: comp.performance_components_session?.map(p => p.performance_id) || [],
+          moments: comp.moment_components_session?.sort((a, b) => a.order_index - b.order_index).map(m => ({
+            id: m.moment_id,
+            title: m.moments?.title,
+            moments_data: m.moments?.moments_data
+          })) || []
+        };
+        
+        createComponentCard(compPayload);
+      }
+    }
+  }
+}
+
 async function editSession(sessionId) {
   try {
     showToast('Cargando detalles de la sesión...', 'info');
     const details = await getSessionDetails(sessionId);
-    
-    openEditor(details);
-    
-    const comp0 = details.components_sessions?.[0];
-    let cycleId = '';
-    let ageId = '';
-    
-    if (comp0 && comp0.performance_components_session && comp0.performance_components_session.length > 0) {
-      const firstPerfId = comp0.performance_components_session[0].performance_id;
-      
-      const { data: perfData } = await supabase
-        .from('performances')
-        .select('age_id, ages(cycle_id)')
-        .eq('id', firstPerfId)
-        .single();
-      
-      if (perfData) {
-        ageId = perfData.age_id;
-        cycleId = perfData.ages?.cycle_id;
-      }
-    }
-
-    if (cycleId) {
-      cycleSelect.value = cycleId;
-      // Cargar edades de forma asíncrona y esperar que termine
-      await loadAgesForCycle(cycleId);
-      
-      if (ageId) {
-        ageSelect.value = ageId;
-        ageSelect.disabled = false;
-      }
-
-      if (details.components_sessions && details.components_sessions.length > 0) {
-        const sortedComps = details.components_sessions.sort((a, b) => a.order_index - b.order_index);
-        
-        // Crear componentes
-        for (const comp of sortedComps) {
-          const compPayload = {
-            id: comp.id,
-            type: comp.type,
-            title: comp.title,
-            area_id: comp.purpose_components_session?.[0]?.learning_purposes?.area_id || null,
-            skill_id: comp.purpose_components_session?.[0]?.learning_purposes?.skill_id || null,
-            performances: comp.performance_components_session?.map(p => p.performance_id) || [],
-            moments: comp.moment_components_session?.sort((a, b) => a.order_index - b.order_index).map(m => ({
-              id: m.moment_id,
-              title: m.moments?.title,
-              moments_data: m.moments?.moments_data
-            })) || []
-          };
-          
-          createComponentCard(compPayload);
-        }
-      }
-    }
+    await populateEditorWithSession(details, false);
   } catch (error) {
     console.error('Error al editar sesión:', error);
     showToast('Error al cargar la información de la sesión.', 'error');
@@ -770,7 +885,7 @@ async function saveCurrentSession() {
   try {
     const sessionData = {
       id: editSessionIdInput.value || null,
-      title: sessionTitleInput.value,
+      title: cleanTextForSave(sessionTitleInput.value),
       session_date: sessionDateInput.value,
       components: []
     };
@@ -787,21 +902,38 @@ async function saveCurrentSession() {
       const checkedBoxes = card.querySelectorAll('.perf-checkbox:checked');
       const performances = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
 
-      // !!! COMPARACIÓN ESTRUCTURAL PROFUNDA PARA EL RECICLAJE CON COPY-ON-WRITE (v10) !!!
+      // !!! COMPARACIÓN ESTRUCTURAL PROFUNDA PARA EL RECICLAJE CON COPY-ON-WRITE (v10/v12) !!!
       const moments = (cardTimelines[blockId]?.moments || []).map((m, idx) => {
-        // Intentar buscar match exacto en la biblioteca local del usuario
-        const catalogMatch = userMomentsCatalog.find(catMom => areMomentsEqual(m, catMom));
+        // Normalizar en caliente los textos de moments_data antes de comparar y guardar
+        const cleanMomentsData = (m.moments_data || []).map(sub => ({
+          start_time: sub.start_time,
+          end_time: sub.end_time,
+          subtitle: cleanTextForSave(sub.subtitle),
+          application: (sub.application || []).map(app => ({
+            section_title: cleanTextForSave(app.section_title),
+            items: (app.items || []).map(item => cleanTextForSave(item)),
+            resources: (app.resources || []).map(res => cleanTextForSave(res))
+          }))
+        }));
+
+        const momentPayload = {
+          title: cleanTextForSave(m.title),
+          moments_data: cleanMomentsData
+        };
+
+        // Intentar buscar match semántico exacto en la biblioteca local del usuario
+        const catalogMatch = userMomentsCatalog.find(catMom => areMomentsEqual(momentPayload, catMom));
         return {
           id: catalogMatch ? catalogMatch.id : null, // Si coincide, reutiliza el ID, si no, se guarda como plantilla nueva (inmutabilidad)
-          title: m.title,
-          moments_data: m.moments_data,
+          title: momentPayload.title,
+          moments_data: momentPayload.moments_data,
           order_index: idx
         };
       });
 
       sessionData.components.push({
         type,
-        title: type === 'taller' ? title : sessionData.title,
+        title: cleanTextForSave(type === 'taller' ? title : sessionData.title),
         order_index: index,
         area_id: areaId ? parseInt(areaId) : null,
         skill_id: skillId ? parseInt(skillId) : null,
@@ -851,9 +983,9 @@ async function printSession(sessionId) {
   }
 }
 
-// Función helper de comparación profunda estructural para la inmutabilidad de la biblioteca de momentos
+// Función helper de comparación profunda estructural para la inmutabilidad de la biblioteca de momentos (v12 semántica)
 function areMomentsEqual(momA, momB) {
-  if (momA.title.trim().toUpperCase() !== momB.title.trim().toUpperCase()) return false;
+  if (normalizeText(momA.title) !== normalizeText(momB.title)) return false;
   
   const dataA = momA.moments_data || [];
   const dataB = momB.moments_data || [];
@@ -866,7 +998,7 @@ function areMomentsEqual(momA, momB) {
     
     if (subA.start_time !== subB.start_time) return false;
     if (subA.end_time !== subB.end_time) return false;
-    if ((subA.subtitle || '') !== (subB.subtitle || '')) return false;
+    if (normalizeText(subA.subtitle) !== normalizeText(subB.subtitle)) return false;
     
     // Comparar secuencia de aplicación
     const appA = subA.application || [];
@@ -877,21 +1009,99 @@ function areMomentsEqual(momA, momB) {
       const secA = appA[j];
       const secB = appB[j];
       
-      if ((secA.section_title || '') !== (secB.section_title || '')) return false;
+      if (normalizeText(secA.section_title) !== normalizeText(secB.section_title)) return false;
       
       // Viñetas de aplicación
       const itemsA = secA.items || [];
       const itemsB = secB.items || [];
       if (itemsA.length !== itemsB.length) return false;
-      if (itemsA.some((val, idx) => val !== itemsB[idx])) return false;
+      if (itemsA.some((val, idx) => normalizeText(val) !== normalizeText(itemsB[idx]))) return false;
       
       // Viñetas de recursos
       const resA = secA.resources || [];
       const resB = secB.resources || [];
       if (resA.length !== resB.length) return false;
-      if (resA.some((val, idx) => val !== resB[idx])) return false;
+      if (resA.some((val, idx) => normalizeText(val) !== normalizeText(resB[idx]))) return false;
     }
   }
   
   return true;
+}
+
+// Abre el modal flotante para seleccionar modo de inicio (v11)
+function openTemplateSelectionModal() {
+  // Resetear el formulario del modal
+  templateSelectionModal.querySelector('input[name="startMode"][value="blank"]').checked = true;
+  templateSessionSelectGroup.classList.add('hidden-screen');
+  templateSessionSelect.innerHTML = '<option value="">Selecciona la sesión...</option>';
+
+  if (userSessionsList.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = "";
+    opt.textContent = "No tienes sesiones guardadas todavía";
+    templateSessionSelect.appendChild(opt);
+  } else {
+    userSessionsList.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      const fmtDate = new Date(s.session_date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+      opt.textContent = `${s.title.toUpperCase()} (${fmtDate})`;
+      templateSessionSelect.appendChild(opt);
+    });
+  }
+
+  templateSelectionModal.classList.remove('hidden-screen');
+}
+
+// Carga los detalles de una sesión guardada y la clona como plantilla para la nueva sesión (v11)
+async function loadSessionAsTemplate(templateId) {
+  try {
+    showToast('Cargando plantilla...', 'info');
+    const details = await getSessionDetails(templateId);
+    await populateEditorWithSession(details, true);
+    showToast('Plantilla cargada. Selecciona la nueva fecha para guardar.', 'success');
+  } catch (error) {
+    console.error('Error al cargar plantilla:', error);
+    showToast('Error al cargar los datos de la sesión plantilla.', 'error');
+  }
+}
+
+// Helper para normalizar textos temporalmente con fines de comparación semántica (v12)
+function normalizeText(str) {
+  if (!str) return '';
+  return str
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remover tildes y diacríticos
+    .replace(/^[\s.,-]+|[\s.,-]+$/g, '') // Quitar puntuación en los extremos
+    .replace(/\s+/g, ' '); // Colapsar múltiples espacios
+}
+
+// Helper para sanitizar y formatear ortográficamente los textos al guardar (v12)
+function cleanTextForSave(str) {
+  if (!str) return '';
+  let cleaned = str.trim().replace(/\s+/g, ' ');
+  if (cleaned.length > 0) {
+    // Capitalizar la primera letra
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+  return cleaned;
+}
+
+// Poblar el datalist dinámico de títulos de momentos para autocompletado (v12)
+function populateMomentsDatalist() {
+  const datalist = document.getElementById('momentTitlesDatalist');
+  if (!datalist) return;
+  datalist.innerHTML = '';
+  
+  if (userMomentsCatalog && userMomentsCatalog.length > 0) {
+    // Extraer títulos únicos de moments catalog
+    const uniqueTitles = Array.from(new Set(userMomentsCatalog.map(m => m.title.trim())));
+    uniqueTitles.forEach(title => {
+      const opt = document.createElement('option');
+      opt.value = title;
+      datalist.appendChild(opt);
+    });
+  }
 }
