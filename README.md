@@ -30,12 +30,16 @@ VITE_SUPABASE_ANON_KEY=tu-anon-public-key-aqui
 ```
 
 ### 3. Configurar la Base de Datos en Supabase
-1. Ve a la sección **SQL Editor** en tu consola de Supabase.
-2. Ejecuta el script **[database/designed.sql](file:///home/aer98e/Programmin-Proyects/HTML/Sesiones-Aprendizaje-Adminstrador/database/designed.sql)** para crear todas las tablas, relaciones y habilitar RLS.
-3. Ejecuta el script **[database/rls_policies.sql](file:///home/aer98e/Programmin-Proyects/HTML/Sesiones-Aprendizaje-Adminstrador/database/rls_policies.sql)** para aplicar las políticas de seguridad que permiten lecturas públicas (SELECT) de forma anónima.
+Para replicar la base de datos con la arquitectura modular y triggers automáticos, ve a la sección **SQL Editor** de tu consola de Supabase y ejecuta los siguientes scripts en el orden exacto:
+
+1.  **Perfil y Gestión de Usuarios:** Ejecuta el contenido de [database/users_tables.sql](file:///e:/Programming_Proyects/Learning-Session-Manager/database/users_tables.sql) para crear las tablas de perfil y triggers de auto-creación.
+2.  **Tablas Curriculares:** Ejecuta el contenido de [database/designed.sql](file:///e:/Programming_Proyects/Learning-Session-Manager/database/designed.sql) para crear el esquema del Currículo Nacional.
+3.  **Políticas RLS Públicas:** Ejecuta el contenido de [database/rls_policies.sql](file:///e:/Programming_Proyects/Learning-Session-Manager/database/rls_policies.sql) para permitir lecturas públicas del currículo.
+4.  **Estructura del Diseñador y Sesiones (JSONB consolidado v5):** Ejecuta el contenido de [database/designed_sessions_v5.sql](file:///e:/Programming_Proyects/Learning-Session-Manager/database/designed_sessions_v5.sql) para habilitar las tablas de sesiones y momentos con JSONB.
+5.  **Mantenimiento Automático (Garbage Collector v6):** Ejecuta el contenido de [database/designed_sessions_v6_triggers.sql](file:///e:/Programming_Proyects/Learning-Session-Manager/database/designed_sessions_v6_triggers.sql) para activar la eliminación automática de momentos huérfanos.
 
 ### 4. Poblar la Base de Datos (Seeding)
-El proyecto incluye los currículos completos estructurados para Inicial (Ciclo I y Ciclo II). Ejecuta el siguiente comando para cargar la información curricular (edades, áreas, competencias, capacidades y desempeños) en tu base de datos de Supabase:
+Una vez creadas las tablas, pobla la base de datos con el Currículo Nacional Inicial oficial (edades, áreas, competencias, capacidades y desempeños) ejecutando el script seeder de Node:
 
 ```bash
 npm run seed
@@ -107,31 +111,37 @@ npm run build
 │   ├── designed.sql          # Estructura de tablas y RLS de Supabase
 │   ├── load_data.js          # Script NodeJS para poblar la base de datos
 │   ├── rls_policies.sql      # Registro de políticas RLS aplicadas
-│   └── users_tables.sql      # Estructura y triggers para gestión de usuarios
+│   ├── users_tables.sql      # Estructura y triggers para gestión de usuarios
+│   ├── designed_sessions_v5.sql       # Estructura de momentos JSONB consolidada
+│   └── designed_sessions_v6_triggers.sql # Trigger Garbage Collector de huérfanos
 ├── src/
 │   ├── api/
 │   │   ├── supabase.js       # Inicialización del cliente Supabase
-│   │   └── queries.js        # Consultas optimizadas a base de datos
-│   ├── components/           # Componentes UI autónomos (Auth, Theme, Loader, Form, Toast)
-│   │   ├── auth.js
-│   │   ├── formManager.js
-│   │   ├── templateLoader.js
-│   │   ├── theme.js
-│   │   └── toast.js
-│   ├── styles/               # Hojas de estilo CSS segmentadas
-│   │   ├── auth.css
-│   │   ├── cards.css
-│   │   ├── form.css
-│   │   ├── layout.css
-│   │   ├── toast.css
-│   │   └── variables.css
+│   │   └── queries.js        # Consultas optimizadas de guardado modular
+│   ├── components/           # Componentes UI de orquestación
+│   │   ├── auth.js           # Orquestador del flujo de login/registro
+│   │   ├── formManager.js    # Controlador general del Wizard y cargado
+│   │   ├── templateLoader.js # Procesador de documentos .docx del docente
+│   │   ├── theme.js          # Switch e inicializador del tema oscuro/claro
+│   │   ├── timelineManager.js # Motor de timeline interactivo y submomentos
+│   │   └── toast.js          # Sistema dinámico de notificaciones flotantes
+│   ├── styles/               # Hojas de estilo CSS modulares
+│   │   ├── auth.css          # Estilos de login, registro y formularios de acceso
+│   │   ├── cards.css         # Estilos de grilla y tarjetas de sesiones
+│   │   ├── form.css          # Estilos generales del formulario y selects
+│   │   ├── layout.css        # Contenedores, cabeceras y estructura de app
+│   │   ├── toast.css         # Visualización y animación de notificaciones
+│   │   ├── variables.css     # Tokens de colores y gradientes premium
+│   │   ├── timeline.css      # Estilos del timeline, nodos intercalados y pestañas
+│   │   └── print.css         # Reglas de paginación para exportación a PDF
 │   ├── utils/
 │   │   ├── docxParser.js     # Sanitizador XML y generador .docx cliente
+│   │   ├── pdfGenerator.js   # Generador dinámico de impresión HTML a PDF
 │   │   └── state.js          # Estado global compartido de la aplicación
-│   ├── main.js               # Orquestador e inicializador de componentes
-│   └── style.css             # Archivo CSS maestro que importa submódulos
-├── index.html                # Plantilla HTML principal (contenedores vacíos)
+│   ├── main.js               # Punto de entrada e importación CSS maestro
+│   └── style.css             # CSS consolidado e importaciones
+├── index.html                # Interfaz principal, modal flotante y datalist predictivo
 ├── package.json              # Scripts npm y dependencias del proyecto
-└── README.md                 # Documentación técnica (este archivo)
+└── README.md                 # Documentación del proyecto y onboarding (este archivo)
 ```
 
